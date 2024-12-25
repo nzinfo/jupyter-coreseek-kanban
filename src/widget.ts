@@ -4,6 +4,7 @@ import { DocumentWidget } from '@jupyterlab/docregistry';
 import { Message } from '@lumino/messaging';
 import { KanbanModel, ITask, TaskStatus } from './model';
 import { MarkdownSerializer } from './markdown';
+// import { Contents } from '@jupyterlab/services';
 
 export class KanbanWidget extends Widget {
   constructor() {
@@ -141,8 +142,8 @@ export class KanbanWidget extends Widget {
   private _model: KanbanModel;
 }
 
-export class KanbanDocWidget extends DocumentWidget<KanbanWidget, DocumentRegistry.IModel> {
-  constructor(options: DocumentWidget.IOptions<KanbanWidget, DocumentRegistry.IModel>) {
+export class KanbanDocWidget extends DocumentWidget<KanbanWidget, DocumentRegistry.ICodeModel> {
+  constructor(options: DocumentWidget.IOptions<KanbanWidget, DocumentRegistry.ICodeModel>) {
     super(options);
 
     // Listen for model changes
@@ -156,17 +157,29 @@ export class KanbanDocWidget extends DocumentWidget<KanbanWidget, DocumentRegist
 
   private async _loadFromFile(): Promise<void> {
     await this.context.ready;
-    const text = this.context.model.toString();
-    const tasks = MarkdownSerializer.deserialize(text);
-    
-    tasks.forEach(task => {
-      this.content.model.addTask(task);
-    });
+    try {
+      const text = this.context.model.toString();
+      if (text.trim() === '') {
+        // Create default empty kanban board
+        const defaultMarkdown = '# Kanban Board\n\n## Backlog\n\n## Todo\n\n## Doing\n\n## Review\n\n## Done\n';
+        this.context.model.sharedModel.setSource(defaultMarkdown);
+        return;
+      }
+      const tasks = MarkdownSerializer.deserialize(text);
+      tasks.forEach(task => {
+        this.content.model.addTask(task);
+      });
+    } catch (error) {
+      console.error('Error loading kanban file:', error);
+      // Create default empty kanban board on error
+      const defaultMarkdown = '# Kanban Board\n\n## Backlog\n\n## Todo\n\n## Doing\n\n## Review\n\n## Done\n';
+      this.context.model.sharedModel.setSource(defaultMarkdown);
+    }
   }
 
   private _saveToFile(): void {
     const tasks = this.content.model.tasks;
     const markdown = MarkdownSerializer.serialize(tasks);
-    this.context.model.setValue(markdown);
+    this.context.model.sharedModel.setSource(markdown);
   }
 }

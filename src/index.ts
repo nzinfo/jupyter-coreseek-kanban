@@ -93,17 +93,40 @@ const plugin: JupyterFrontEndPlugin<IKanban> = {
     const createCommand = 'kanban:create';
     app.commands.addCommand(createCommand, {
       label: 'Create New Kanban Board',
-      execute: () => {
-        // const cwd = browserFactory ? browserFactory.defaultBrowser.model.path : '';
-        const model = docManager.newUntitled({
-          ext: FILE_EXTENSION,
-          type: 'file',
-          path: '.worklog/tasks.md'
-        });
-        
-        model.then(model => {
-          docManager.openOrReveal(model.path);
-        });
+      execute: async () => {
+        try {
+          // First ensure .worklog directory exists
+          const dirPath = '__worklog__';
+          await app.serviceManager.contents.newUntitled({
+            type: 'directory',
+            path: ''
+          }).then(model => {
+            return app.serviceManager.contents.rename(model.path, dirPath);
+          }).catch(error => {
+            // Directory might already exist, which is fine
+            console.log('Directory creation skipped:', error);
+          });
+
+          const filePath = `${dirPath}/tasks.md`;
+          try {
+            // Try to get the file first
+            await app.serviceManager.contents.get(filePath);
+            // File exists, just open it
+            return docManager.openOrReveal(filePath);
+          } catch (error) {
+            // File doesn't exist, create it with default content
+            const model = await app.serviceManager.contents.save(filePath, {
+              type: 'file',
+              format: 'text',
+              content: '# Kanban Board\n\n## Todo\n\n## In Progress\n\n## Done\n'
+            });
+
+            // Open the newly created file
+            return docManager.openOrReveal(model.path);
+          }
+        } catch (error) {
+          console.error('Error creating kanban board:', error);
+        }
       }
     });
 
