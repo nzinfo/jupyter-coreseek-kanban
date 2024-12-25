@@ -1,0 +1,5 @@
+{
+  "packageManager": "python",
+  "packageName": "coreseek_jupyter_kanban",
+  "uninstallInstructions": "Use your Python package manager (pip, conda, etc.) to uninstall the package coreseek_jupyter_kanban"
+}

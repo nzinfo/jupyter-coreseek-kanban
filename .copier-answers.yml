@@ -1,0 +1,14 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: v4.3.6
+_src_path: https://github.com/jupyterlab/extension-template
+author_email: li.monan@gmail.com
+author_name: nzinfo
+has_binder: false
+has_settings: true
+kind: frontend
+labextension_name: '@coreseek/jupyter-kanban'
+project_short_description: A JupyterLab extension.
+python_name: coreseek_jupyter_kanban
+repository: https://github.com/nzinfo/jupyter-kanban
+test: true
+

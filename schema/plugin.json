@@ -1,0 +1,8 @@
+{
+  "jupyter.lab.shortcuts": [],
+  "title": "@coreseek/jupyter-kanban",
+  "description": "@coreseek/jupyter-kanban settings.",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false
+}
