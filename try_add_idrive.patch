@@ -1,0 +1,627 @@
+diff --git a/src/factory.ts b/src/factory.ts
+index bfaa81a..8105c2a 100644
+--- a/src/factory.ts
++++ b/src/factory.ts
+@@ -1,16 +1,82 @@
+-import { ABCWidgetFactory, DocumentRegistry } from '@jupyterlab/docregistry';
+-import { KanbanWidget, KanbanDocWidget } from './widget';
++import { DocumentRegistry, IDocumentWidget } from '@jupyterlab/docregistry';
++import { KanbanWidget } from './widget';
++import { Signal } from '@lumino/signaling';
+ 
+-export class KanbanFactory extends ABCWidgetFactory<KanbanDocWidget, DocumentRegistry.ICodeModel> {
+-  constructor(options: DocumentRegistry.IWidgetFactoryOptions) {
+-    super(options);
++/**
++ * A widget factory for Kanban boards.
++ */
++export class KanbanFactory implements DocumentRegistry.IWidgetFactory<IDocumentWidget<KanbanWidget, DocumentRegistry.IModel>, DocumentRegistry.IModel> {
++  /**
++   * Construct a new KanbanFactory.
++   */
++  constructor(options: DocumentRegistry.IWidgetFactoryOptions<IDocumentWidget<KanbanWidget, DocumentRegistry.IModel>>) {
++    this._name = options.name;
++    this._fileTypes = options.fileTypes || [];
++    this._defaultFor = options.defaultFor || [];
+   }
+ 
+-  protected createNewWidget(
+-    context: DocumentRegistry.IContext<DocumentRegistry.ICodeModel>
+-  ): KanbanDocWidget {
++  /**
++   * A signal emitted when a widget is created.
++   */
++  get widgetCreated(): Signal<DocumentRegistry.IWidgetFactory<IDocumentWidget<KanbanWidget, DocumentRegistry.IModel>, DocumentRegistry.IModel>, IDocumentWidget<KanbanWidget, DocumentRegistry.IModel>> {
++    return this._widgetCreated;
++  }
++
++  /**
++   * Get the name of the widget to display in dialogs.
++   */
++  get name(): string {
++    return this._name;
++  }
++
++  /**
++   * Get the file types supported by the widget.
++   */
++  get fileTypes(): string[] {
++    return this._fileTypes.slice();
++  }
++
++  /**
++   * Get the file types for which the widget should be the default.
++   */
++  get defaultFor(): string[] {
++    return this._defaultFor.slice();
++  }
++
++  /**
++   * Create a new widget given a context.
++   */
++  createNew(
++    context: DocumentRegistry.IContext<DocumentRegistry.IModel>,
++    source?: IDocumentWidget<KanbanWidget, DocumentRegistry.IModel>
++  ): IDocumentWidget<KanbanWidget, DocumentRegistry.IModel> {
+     const content = new KanbanWidget();
+-    const widget = new KanbanDocWidget({ content, context });
++    const widget = new DocumentRegistry.ABCWidgetFactory.createNew(content, context);
++    this._widgetCreated.emit(widget);
+     return widget;
+   }
++
++  /**
++   * Whether the widget factory is disposed.
++   */
++  get isDisposed(): boolean {
++    return this._isDisposed;
++  }
++
++  /**
++   * Dispose of the resources used by the widget factory.
++   */
++  dispose(): void {
++    if (this._isDisposed) {
++      return;
++    }
++    this._isDisposed = true;
++    Signal.clearData(this);
++  }
++
++  private _name: string;
++  private _isDisposed = false;
++  private _fileTypes: string[];
++  private _defaultFor: string[];
++  private _widgetCreated = new Signal<this, IDocumentWidget<KanbanWidget, DocumentRegistry.IModel>>(this);
+ }
+diff --git a/src/index.ts b/src/index.ts
+index a5a9cb9..d1cc82e 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -1,168 +1,74 @@
+-import {
+-  JupyterFrontEnd,
+-  JupyterFrontEndPlugin,
+-  ILayoutRestorer
+-} from '@jupyterlab/application';
+-
+-import { ISettingRegistry } from '@jupyterlab/settingregistry';
++import { JupyterFrontEnd, JupyterFrontEndPlugin } from '@jupyterlab/application';
+ import { ICommandPalette } from '@jupyterlab/apputils';
+ import { IDocumentManager } from '@jupyterlab/docmanager';
+ import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
+-import { WidgetTracker } from '@jupyterlab/apputils';
+-import { IMarkdownViewerTracker } from '@jupyterlab/markdownviewer';
+-
+-import { KanbanDocWidget } from './widget';
+ import { KanbanFactory } from './factory';
+-import { IKanbanManager } from './tokens';
+-import { KanbanManager } from './service';
+-import { activateSidePanel } from './leftPanel';
++import { KanbanDocWidget } from './widget';
+ 
+ /**
+- * The MIME type for Kanban markdown.
++ * The command IDs used by the plugin.
+  */
+-const MIME_TYPE = 'text/markdown-kanban';
+-const FILE_EXTENSION = '.md';
+-const PLUGIN_ID = '@coreseek/jupyter-kanban:plugin';
++namespace CommandIDs {
++  export const create = 'kanban:create';
++  export const open = 'kanban:open';
++}
+ 
+ /**
+- * Initialization data for the @coreseek/jupyter-kanban extension.
++ * Initialization data for the jupyter-kanban extension.
+  */
+-const plugin: JupyterFrontEndPlugin<IKanbanManager> = {
+-  id: PLUGIN_ID,
+-  description: 'A Kanban board extension for JupyterLab',
++const extension: JupyterFrontEndPlugin<void> = {
++  id: 'jupyter-kanban:plugin',
+   autoStart: true,
+-  requires: [IDocumentManager, ICommandPalette, ILayoutRestorer],
+-  optional: [ISettingRegistry, IFileBrowserFactory, IMarkdownViewerTracker],
+-  provides: IKanbanManager,
++  requires: [ICommandPalette, IDocumentManager, IFileBrowserFactory],
+   activate: (
+     app: JupyterFrontEnd,
+-    docManager: IDocumentManager,
+     palette: ICommandPalette,
+-    restorer: ILayoutRestorer,
+-    settingRegistry: ISettingRegistry | null,
+-    browserFactory: IFileBrowserFactory | null,
+-    markdownViewerTracker: IMarkdownViewerTracker | null
+-  ): IKanbanManager => {
+-    console.log('JupyterLab extension @coreseek/jupyter-kanban is activated!');
+-
+-    // Create the kanban manager
+-    const manager = new KanbanManager();
+-
+-    // Create a widget tracker for Kanban boards
+-    const tracker = new WidgetTracker<KanbanDocWidget>({ namespace: 'kanban' });
++    docManager: IDocumentManager,
++    browserFactory: IFileBrowserFactory
++  ) => {
++    console.log('JupyterLab extension jupyter-kanban is activated!');
+ 
+-    // Register the Kanban factory
++    // Create a widget factory for Kanban files.
+     const factory = new KanbanFactory({
+       name: 'Kanban',
+-      fileTypes: ['markdown-kanban'],
+-      defaultFor: ['markdown-kanban'],
+-      readOnly: false
+-    });
+-    
+-    app.docRegistry.addFileType({
+-      name: 'markdown-kanban',
+-      mimeTypes: [MIME_TYPE],
+-      extensions: [FILE_EXTENSION],
+-      contentType: 'file',
+-      fileFormat: 'text'
++      fileTypes: ['kanban'],
++      defaultFor: ['kanban']
+     });
+ 
++    // Add the widget factory to the document registry.
+     app.docRegistry.addWidgetFactory(factory);
+ 
+-    // Track widget changes
+-    factory.widgetCreated.connect((sender, widget) => {
+-      // Track the widget
+-      void tracker.add(widget);
+-      // Update the manager's active widget
+-      manager.activeKanban = widget;
+-    });
+-
+-    // Track focus changes
+-    tracker.currentChanged.connect((_, widget) => {
+-      manager.activeKanban = widget;
++    // Add the file type to the document registry.
++    app.docRegistry.addFileType({
++      name: 'kanban',
++      displayName: 'Kanban Board',
++      extensions: ['.kanban'],
++      icon: 'ui-components:kanban'
+     });
+ 
+-    // Restore widgets on layout restore
+-    if (restorer) {
+-      void restorer.restore(tracker, {
+-        command: 'kanban:create',
+-        name: () => 'kanban'
+-      });
+-    }
+-
+-    // Add commands
+-    const createCommand = 'kanban:create';
+-    app.commands.addCommand(createCommand, {
+-      label: 'Create New Kanban Board',
++    // Add commands to the command registry
++    app.commands.addCommand(CommandIDs.create, {
++      label: 'Create Kanban Board',
++      caption: 'Create a new Kanban board',
+       execute: async () => {
+-        try {
+-          // First ensure .worklog directory exists
+-          const dirPath = '__worklog__';
+-          await app.serviceManager.contents.newUntitled({
+-            type: 'directory',
+-            path: dirPath
+-          });
+-        } catch (error) {
+-          console.log('Directory already exists or error creating it:', error);
+-        }
+-
+-        const model = await app.serviceManager.contents.newUntitled({
++        const cwd = browserFactory.defaultBrowser.model.path;
++        const model = await docManager.newUntitled({
++          path: cwd,
+           type: 'file',
+-          path: '__worklog__',
+-          ext: FILE_EXTENSION
++          ext: '.kanban'
+         });
+-
+-        const widget = await docManager.open(model.path);
+-        if (widget) {
+-          widget.title.label = 'Kanban Board';
+-        }
+-        return widget;
++        await docManager.openOrReveal(model.path);
+       }
+     });
+ 
+-    // Add open tasks command
+-    app.commands.addCommand('kanban:open-tasks', {
+-      label: 'Open Tasks',
+-      execute: async () => {
+-        const path = '__worklog__/tasks.md';
+-        try {
+-          await app.serviceManager.contents.get(path);
+-        } catch (error) {
+-          // If file doesn't exist, create it
+-          await app.serviceManager.contents.save(path, {
+-            type: 'file',
+-            format: 'text',
+-            content: '---\ntype: kanban\n---\n\n# Tasks\n\n## Backlog\n\n## Todo\n\n## Doing\n\n## Review\n\n## Done\n'
+-          });
+-        }
+-        
+-        // Use our factory to open the file
+-        const widget = await docManager.open(path, 'Kanban');
+-        if (widget) {
+-          widget.title.label = 'Tasks';
+-        }
+-        return widget;
+-      }
++    // Add the command to the command palette
++    palette.addItem({
++      command: CommandIDs.create,
++      category: 'Kanban'
+     });
+ 
+-    palette.addItem({ command: createCommand, category: 'Kanban' });
+-
+-    // Activate the side panel
+-    activateSidePanel(app, app.commands);
+-
+-    if (settingRegistry) {
+-      settingRegistry
+-        .load(plugin.id)
+-        .then(settings => {
+-          console.log('@coreseek/jupyter-kanban settings loaded:', settings.composite);
+-        })
+-        .catch(reason => {
+-          console.error('Failed to load settings for @coreseek/jupyter-kanban.', reason);
+-        });
+-    }
+-
+-    return manager;
++    return;
+   }
+ };
+ 
+-export default plugin;
++export default extension;
+diff --git a/src/widget.ts b/src/widget.ts
+index 979c798..a454d16 100644
+--- a/src/widget.ts
++++ b/src/widget.ts
+@@ -1,65 +1,36 @@
+-import { Widget } from '@lumino/widgets';
+-import { DocumentRegistry } from '@jupyterlab/docregistry';
+-import { DocumentWidget } from '@jupyterlab/docregistry';
+-import { CodeMirrorEditor, CodeMirrorEditorFactory } from '@jupyterlab/codemirror';
++import { Widget, BoxLayout } from '@lumino/widgets';
++import { DocumentRegistry, IDocumentWidget } from '@jupyterlab/docregistry';
+ import { CodeEditor } from '@jupyterlab/codeeditor';
+-import { YFile } from '@jupyter/ydoc';
++import { CodeMirrorEditor } from '@jupyterlab/codemirror';
++import { Signal } from '@lumino/signaling';
++import { Message } from '@lumino/messaging';
++import { ToolbarButton } from '@jupyterlab/apputils';
+ 
++/**
++ * A widget for displaying a Kanban board.
++ */
+ export class KanbanWidget extends Widget {
+-  readonly model: CodeEditor.IModel;
+-  readonly editor: CodeMirrorEditor;
+-  private container: HTMLDivElement;
+-
+   constructor() {
+     super();
+     this.addClass('jp-KanbanWidget');
+-
+-    // Create container for the widget
++    
++    // Create container
+     this.container = document.createElement('div');
+     this.container.className = 'jp-KanbanWidget-container';
+     this.node.appendChild(this.container);
+ 
+-    // Create header section
+-    const header = document.createElement('div');
+-    header.className = 'jp-KanbanWidget-header';
+-    header.innerHTML = '<h2>Kanban Board</h2>';
+-    this.container.appendChild(header);
+-
+     // Create editor section
+     const editorSection = document.createElement('div');
+     editorSection.className = 'jp-KanbanWidget-editor';
+     this.container.appendChild(editorSection);
+-    
++
+     // Create editor factory
+-    const factory = new CodeMirrorEditorFactory();
+-    
+-    // Create editor model with shared model for collaboration
+-    this.model = new CodeEditor.Model({
+-      sharedModel: new YFile()
+-    });
+-    
+-    // Create editor with inline configuration
+-    this.editor = factory.newInlineEditor({
++    const factory = new CodeMirrorEditor({
+       host: editorSection,
+-      model: this.model,
+-      config: {
+-        lineNumbers: true,
+-        lineWrap: true,
+-        styleActiveLine: true,
+-        matchBrackets: true,
+-        autoClosingBrackets: true,
+-        readOnly: false
+-      }
+-    }) as CodeMirrorEditor;
+-
+-    // Set initial content
+-    this.model.sharedModel.setSource('# Kanban Board Title\n\nEdit this title...');
++      model: new CodeEditor.Model()
++    });
+ 
+-    // If collaborative editing is available (sharedModel exists), set up collaboration features
+-    const sharedModel = this.model.sharedModel;
+-    if (sharedModel) {
+-      this.setupCollaboration(sharedModel);
+-    }
++    this._editor = factory;
+ 
+     // Add some basic styles
+     const style = document.createElement('style');
+@@ -68,67 +39,195 @@ export class KanbanWidget extends Widget {
+         display: flex;
+         flex-direction: column;
+         height: 100%;
+-        padding: 16px;
+-      }
+-      .jp-KanbanWidget-header {
+-        margin-bottom: 16px;
++        width: 100%;
+       }
+       .jp-KanbanWidget-editor {
+         flex: 1;
+-        border: 1px solid var(--jp-border-color1);
+-        border-radius: 4px;
++        overflow: auto;
+         padding: 8px;
+       }
+     `;
+     document.head.appendChild(style);
+   }
+ 
+-  private setupCollaboration(sharedModel: any) {
+-    // Listen for shared model changes
+-    sharedModel.changed.connect(() => {
+-      const newContent = sharedModel.getSource();
+-      if (this.content !== newContent) {
+-        this.content = newContent;
++  /**
++   * The document context for the widget.
++   */
++  get context(): DocumentRegistry.IContext<DocumentRegistry.IModel> | null {
++    return this._context;
++  }
++
++  set context(value: DocumentRegistry.IContext<DocumentRegistry.IModel> | null) {
++    if (this._context === value) {
++      return;
++    }
++
++    const oldValue = this._context;
++    this._context = value;
++
++    // Trigger an update of the content.
++    this.update();
++
++    if (oldValue) {
++      oldValue.pathChanged.disconnect(this._onPathChanged, this);
++      oldValue.model.contentChanged.disconnect(this._onContentChanged, this);
++    }
++
++    if (value) {
++      value.pathChanged.connect(this._onPathChanged, this);
++      value.model.contentChanged.connect(this._onContentChanged, this);
++    }
++
++    this._contextChanged.emit(value);
++  }
++
++  /**
++   * A signal emitted when the document context changes.
++   */
++  get contextChanged(): Signal<this, DocumentRegistry.IContext<DocumentRegistry.IModel> | null> {
++    return this._contextChanged;
++  }
++
++  /**
++   * Handle the DOM events for the widget.
++   */
++  handleEvent(event: Event): void {
++    switch (event.type) {
++      case 'change':
++        this._onChange();
++        break;
++      default:
++        break;
++    }
++  }
++
++  /**
++   * Handle `after-attach` messages for the widget.
++   */
++  protected onAfterAttach(msg: Message): void {
++    this.node.addEventListener('change', this);
++  }
++
++  /**
++   * Handle `before-detach` messages for the widget.
++   */
++  protected onBeforeDetach(msg: Message): void {
++    this.node.removeEventListener('change', this);
++  }
++
++  /**
++   * Handle `update-request` messages for the widget.
++   */
++  protected onUpdateRequest(msg: Message): void {
++    if (this._context) {
++      const content = this._context.model.toString();
++      if (this._editor.model.getValue() !== content) {
++        this._editor.model.setValue(content);
+       }
+-    });
++    }
++  }
++
++  private _onPathChanged(): void {
++    this.update();
+   }
+ 
+-  get content(): string {
+-    return this.model.sharedModel.getSource();
++  private _onContentChanged(): void {
++    this.update();
++  }
++
++  private _onChange(): void {
++    if (this._context) {
++      const oldValue = this._context.model.toString();
++      const newValue = this._editor.model.getValue();
++      if (oldValue !== newValue) {
++        this._context.model.fromString(newValue);
++      }
++    }
+   }
+ 
+-  set content(value: string) {
+-    this.model.sharedModel.setSource(value);
++  get editor(): CodeMirrorEditor {
++    return this._editor;
+   }
++
++  private _editor: CodeMirrorEditor;
++  private container: HTMLDivElement;
++  private _context: DocumentRegistry.IContext<DocumentRegistry.IModel> | null = null;
++  private _contextChanged = new Signal<this, DocumentRegistry.IContext<DocumentRegistry.IModel> | null>(this);
+ }
+ 
+-export class KanbanDocWidget extends DocumentWidget<KanbanWidget, DocumentRegistry.ICodeModel> {
+-  constructor(options: DocumentWidget.IOptions<KanbanWidget, DocumentRegistry.ICodeModel>) {
+-    super(options);
+-    
++/**
++ * A document widget for Kanban boards.
++ */
++export class KanbanDocWidget extends Widget implements IDocumentWidget<KanbanWidget, DocumentRegistry.IModel> {
++  constructor(options: DocumentRegistry.IWidgetFactoryOptions<IDocumentWidget<KanbanWidget, DocumentRegistry.IModel>>) {
++    super();
++    const { content, context } = options;
++    this._content = content;
++    this._context = context;
++
++    const layout = new BoxLayout();
++    this.layout = layout;
++
++    // Add toolbar
++    this._toolbar = new DocumentRegistry.ToolbarWidget();
++    layout.addWidget(this._toolbar);
++
++    // Add content
++    layout.addWidget(content);
++
+     // Sync document content with widget
+-    this.context.ready.then(() => {
++    this._context.ready.then(() => {
+       // Initial sync
+-      this.content.content = this.context.model.toString();
++      this._content.context = this._context;
+       
+       // Listen for model changes
+-      this.context.model.contentChanged.connect(() => {
+-        const newContent = this.context.model.toString();
+-        if (this.content.content !== newContent) {
+-          this.content.content = newContent;
++      this._context.model.contentChanged.connect(() => {
++        const newContent = this._context.model.toString();
++        if (this._content.editor.model.getValue() !== newContent) {
++          this._content.editor.model.setValue(newContent);
+         }
+       });
+ 
+       // Listen for editor changes
+-      const sharedModel = this.content.model.sharedModel;
+-      if (sharedModel) {
+-        sharedModel.changed.connect(() => {
+-          const newContent = sharedModel.getSource();
+-          if (this.context.model.toString() !== newContent) {
+-            this.context.model.fromString(newContent);
+-          }
+-        });
+-      }
++      this._content.editor.model.value.changed.connect(() => {
++        const newContent = this._content.editor.model.getValue();
++        if (this._context.model.toString() !== newContent) {
++          this._context.model.fromString(newContent);
++        }
++      });
+     });
+   }
++
++  get content(): KanbanWidget {
++    return this._content;
++  }
++
++  get context(): DocumentRegistry.IContext<DocumentRegistry.IModel> {
++    return this._context;
++  }
++
++  get toolbar(): DocumentRegistry.ToolbarWidget {
++    return this._toolbar;
++  }
++
++  get revealed(): Promise<void> {
++    return Promise.resolve(undefined);
++  }
++
++  setFragment(fragment: string): void {
++    /* no-op */
++  }
++
++  dispose(): void {
++    if (this.isDisposed) {
++      return;
++    }
++    this._content.dispose();
++    this._context.dispose();
++    super.dispose();
++  }
++
++  private _content: KanbanWidget;
++  private _context: DocumentRegistry.IContext<DocumentRegistry.IModel>;
++  private _toolbar: DocumentRegistry.ToolbarWidget;
+ }

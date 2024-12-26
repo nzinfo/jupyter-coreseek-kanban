@@ -3,3 +3,24 @@
 
     https://jupyterlab.readthedocs.io/en/stable/developer/css.html
 */
+
+.jp-CollaborativeEditor {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+.jp-CollaborativeEditor .jp-CodeEditorWrapper {
+    flex: 1;
+    overflow: auto;
+    border: var(--jp-border-width) solid var(--jp-cell-editor-border-color);
+    border-radius: var(--jp-border-radius);
+    background: var(--jp-cell-editor-background);
+}
+
+.jp-CollaborativeEditor .jp-CodeEditorWrapper .CodeMirror {
+    height: 100%;
+    width: 100%;
+    padding: var(--jp-code-padding);
+}

@@ -5,7 +5,8 @@
 1. 系统预制的任务状态有：
 backlog | todo | doing | review | done
 2. kanban 存储 任务数据到 jupyter content 目录的根目录下的 `__worklog__/tasks.md` 中
-3. 使用 markdone 文件头部的 meta section 标识当前的 markdown 用于 kanban ( 当前插件 / jupyter 的看板插件）
+3. 使用 markdone 文件
+头部的 meta section 标识当前的 markdown 用于 kanban ( 当前插件 / jupyter 的看板插件）
     - 可以考虑引入新的 mime ,  eg. text/markdown-kanban 
    - 在 meta section 中声明这个 mime
 4. markdown 的 level -1 head 用于 WorkStage 的名称
