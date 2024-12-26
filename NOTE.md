@@ -1,4 +1,4 @@
-项目 kanban 是一个工作在 jupyter 中的插件，类似其 markdown file editor 插件。不同之处在于，显示的不是文本编辑器，而是看板。
+项目 jupyter-coreseek-kanban 是一个工作在 jupyter 中的插件，类似其 markdown file editor 插件。不同之处在于，显示的不是文本编辑器，而是看板。
 
 规格：
 
