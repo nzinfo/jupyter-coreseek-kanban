@@ -8,6 +8,7 @@ import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
 import { IEditorServices } from '@jupyterlab/codeeditor';
 import { DocumentRegistry, ABCWidgetFactory } from '@jupyterlab/docregistry';
 import { CollaborativeEditorWidget } from './editor';
+import { KanbanWidget } from './widget';
 
 /**
  * A widget factory for collaborative editors.
@@ -29,6 +30,22 @@ class CollaborativeEditorFactory extends ABCWidgetFactory<
 }
 
 /**
+ * A widget factory for Kanban widgets.
+ */
+class KanbanWidgetFactory extends ABCWidgetFactory<
+  KanbanWidget,
+  DocumentRegistry.IModel
+> {
+  constructor(options: DocumentRegistry.IWidgetFactoryOptions<KanbanWidget>) {
+    super(options);
+  }
+
+  protected createNewWidget(context: DocumentRegistry.Context): KanbanWidget {
+    return new KanbanWidget(context);
+  }
+}
+
+/**
  * Initialization data for the @coreseek/jupyter-kanban extension.
  */
 const plugin: JupyterFrontEndPlugin<void> = {
@@ -46,13 +63,22 @@ const plugin: JupyterFrontEndPlugin<void> = {
     console.log('JupyterLab extension @coreseek/jupyter-kanban is activated!');
 
     // Register the editor factory
-    const factory = new CollaborativeEditorFactory({
+    const editorFactory = new CollaborativeEditorFactory({
       name: 'Kanban Editor',
       fileTypes: ['markdown'],
       defaultFor: []
     }, editorServices);
 
-    app.docRegistry.addWidgetFactory(factory);
+    app.docRegistry.addWidgetFactory(editorFactory);
+
+    // Register the Kanban widget factory
+    const kanbanFactory = new KanbanWidgetFactory({
+      name: 'Kanban Widget',
+      fileTypes: ['markdown'],
+      defaultFor: []
+    });
+
+    app.docRegistry.addWidgetFactory(kanbanFactory);
 
     // Add the context menu item
     app.commands.addCommand('kanban:open', {
@@ -67,7 +93,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
           const path = selectedItem.path;
           app.commands.execute('docmanager:open', {
             path,
-            factory: 'Kanban Editor'
+            factory: 'Kanban Widget'
           });
         }
       }
