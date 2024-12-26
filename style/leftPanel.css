@@ -1,0 +1,45 @@
+.jp-KanbanSidePanel {
+  display: flex;
+  flex-direction: column;
+  background: var(--jp-layout-color1);
+  color: var(--jp-ui-font-color1);
+  font-size: var(--jp-ui-font-size1);
+  min-width: 300px;
+}
+
+.jp-KanbanSidePanel-header {
+  flex: 0 0 auto;
+  padding: 8px;
+  font-weight: 600;
+  border-bottom: var(--jp-border-width) solid var(--jp-border-color1);
+}
+
+.jp-KanbanSidePanel-content {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 8px;
+}
+
+.jp-KanbanSidePanel-button {
+  background: var(--jp-brand-color1);
+  border: none;
+  border-radius: 2px;
+  color: white;
+  padding: 8px 12px;
+  cursor: pointer;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.jp-KanbanSidePanel-button:hover {
+  background: var(--jp-brand-color0);
+}
+
+.jp-KanbanIcon {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path fill="%23616161" d="M0 1v14h16v-14h-16zm15 13h-14v-12h14v12zm-9-9h-4v7h4v-7zm8 0h-7v1h7v-1zm0 2h-7v1h7v-1zm0 2h-7v1h7v-1z"/></svg>');
+  min-width: 16px;
+  min-height: 16px;
+  background-size: 16px;
+  display: inline-block;
+  vertical-align: middle;
+}

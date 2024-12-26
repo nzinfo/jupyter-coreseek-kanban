@@ -14,6 +14,15 @@
     overflow: auto;
 }
 
+.jp-KanbanWidget {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--jp-layout-color1);
+  color: var(--jp-ui-font-color1);
+  padding: 16px;
+}
+
 .jp-Kanban-board {
     display: flex;
     flex: 1;
@@ -71,6 +80,18 @@
 .jp-Kanban-task-description {
     font-size: var(--jp-ui-font-size0);
     color: var(--jp-ui-font-color2);
+}
+
+.jp-Kanban-hello {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.jp-Kanban-hello h1 {
+  font-size: 24px;
+  color: var(--jp-ui-font-color0);
 }
 
 /* Drag and drop styles */

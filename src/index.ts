@@ -15,6 +15,7 @@ import { KanbanDocWidget } from './widget';
 import { KanbanFactory } from './factory';
 import { IKanban } from './tokens';
 import { KanbanService } from './service';
+import { activateSidePanel } from './leftPanel';
 
 /**
  * The MIME type for Kanban markdown.
@@ -99,54 +100,55 @@ const plugin: JupyterFrontEndPlugin<IKanban> = {
           const dirPath = '__worklog__';
           await app.serviceManager.contents.newUntitled({
             type: 'directory',
-            path: ''
-          }).then(model => {
-            return app.serviceManager.contents.rename(model.path, dirPath);
-          }).catch(error => {
-            // Directory might already exist, which is fine
-            console.log('Directory creation skipped:', error);
+            path: dirPath
           });
-
-          const filePath = `${dirPath}/tasks.md`;
-          try {
-            // Try to get the file first
-            await app.serviceManager.contents.get(filePath);
-            // File exists, just open it
-            return docManager.openOrReveal(filePath);
-          } catch (error) {
-            // File doesn't exist, create it with default content
-            const model = await app.serviceManager.contents.save(filePath, {
-              type: 'file',
-              format: 'text',
-              content: '# Kanban Board\n\n## Todo\n\n## In Progress\n\n## Done\n'
-            });
-
-            // Open the newly created file
-            return docManager.openOrReveal(model.path);
-          }
         } catch (error) {
-          console.error('Error creating kanban board:', error);
+          console.log('Directory already exists or error creating it:', error);
         }
+
+        const model = await app.serviceManager.contents.newUntitled({
+          type: 'file',
+          path: '__worklog__',
+          ext: FILE_EXTENSION
+        });
+
+        const widget = await docManager.open(model.path);
+        if (widget) {
+          widget.title.label = 'Kanban Board';
+        }
+        return widget;
       }
     });
 
-    const newTaskCommand = 'kanban:new-task';
-    app.commands.addCommand(newTaskCommand, {
-      label: 'New Task',
-      execute: () => {
-        if (service.activeKanban) {
-          service.addTask({
-            title: 'New Task',
-            description: 'Add description here',
-            status: 'backlog'
+    // Add open tasks command
+    app.commands.addCommand('kanban:open-tasks', {
+      label: 'Open Tasks',
+      execute: async () => {
+        const path = '__worklog__/tasks.md';
+        try {
+          await app.serviceManager.contents.get(path);
+        } catch (error) {
+          // If file doesn't exist, create it
+          await app.serviceManager.contents.save(path, {
+            type: 'file',
+            format: 'text',
+            content: '---\ntype: kanban\n---\n\n# Tasks\n\n## Backlog\n\n## Todo\n\n## Doing\n\n## Review\n\n## Done\n'
           });
         }
+        
+        // Use our factory to open the file
+        const widget = await docManager.open(path, 'Kanban');
+        if (widget) {
+          widget.title.label = 'Tasks';
+        }
+        return widget;
       }
     });
 
-    // Add commands to palette
     palette.addItem({ command: createCommand, category: 'Kanban' });
-    palette.addItem({ command: newTaskCommand, category: 'Kanban' });
+
+    // Activate the side panel
+    activateSidePanel(app, app.commands);
 
     if (settingRegistry) {
       settingRegistry

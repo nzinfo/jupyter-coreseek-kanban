@@ -6,7 +6,7 @@ Me
 
 1. 系统预制的任务状态有：
 backlog | todo | doing | review | done
-2. kanban 存储 任务数据到 jupyter content 目录的根目录下的 .worklog/tasks.md 中
+2. kanban 存储 任务数据到 jupyter content 目录的根目录下的 `__worklog__/tasks.md` 中
 3. 使用 markdone 文件头部的 meta section 标识当前的 markdown 用于 kanban ( 当前插件 / jupyter 的看板插件）
     - 可以考虑引入新的 mime ,  eg. text/markdown-kanban 
    - 在 meta section 中声明这个 mime
@@ -15,8 +15,8 @@ backlog | todo | doing | review | done
 
 用法：
 
-1. 用户可以通过左侧的侧面板 Task ， 直接打开 kanban 管理界面
-2. 用户可以在文件管理器中打开 .worklog/tasks.md 打开 kanban 管理界面（考虑到 . 开头的目录不显示，这个功能很难触发）
+1. 用户可以通过左侧的侧面板 Task， 直接打开 kanban 管理界面
+2. 用户可以在文件管理器中打开 `__worklog__/tasks.md` 打开 kanban 管理界面（考虑到 . 开头的目录不显示，这个功能很难触发）
 3. 在 kanban 界面中，用户可以
    - 创建新的 task category
    - 创建新的 task
