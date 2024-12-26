@@ -13,8 +13,8 @@ import { IMarkdownViewerTracker } from '@jupyterlab/markdownviewer';
 
 import { KanbanDocWidget } from './widget';
 import { KanbanFactory } from './factory';
-import { IKanban } from './tokens';
-import { KanbanService } from './service';
+import { IKanbanManager } from './tokens';
+import { KanbanManager } from './service';
 import { activateSidePanel } from './leftPanel';
 
 /**
@@ -27,13 +27,13 @@ const PLUGIN_ID = '@coreseek/jupyter-kanban:plugin';
 /**
  * Initialization data for the @coreseek/jupyter-kanban extension.
  */
-const plugin: JupyterFrontEndPlugin<IKanban> = {
+const plugin: JupyterFrontEndPlugin<IKanbanManager> = {
   id: PLUGIN_ID,
   description: 'A Kanban board extension for JupyterLab',
   autoStart: true,
   requires: [IDocumentManager, ICommandPalette, ILayoutRestorer],
   optional: [ISettingRegistry, IFileBrowserFactory, IMarkdownViewerTracker],
-  provides: IKanban,
+  provides: IKanbanManager,
   activate: (
     app: JupyterFrontEnd,
     docManager: IDocumentManager,
@@ -42,11 +42,11 @@ const plugin: JupyterFrontEndPlugin<IKanban> = {
     settingRegistry: ISettingRegistry | null,
     browserFactory: IFileBrowserFactory | null,
     markdownViewerTracker: IMarkdownViewerTracker | null
-  ): IKanban => {
+  ): IKanbanManager => {
     console.log('JupyterLab extension @coreseek/jupyter-kanban is activated!');
 
-    // Create the kanban service
-    const service = new KanbanService();
+    // Create the kanban manager
+    const manager = new KanbanManager();
 
     // Create a widget tracker for Kanban boards
     const tracker = new WidgetTracker<KanbanDocWidget>({ namespace: 'kanban' });
@@ -73,13 +73,13 @@ const plugin: JupyterFrontEndPlugin<IKanban> = {
     factory.widgetCreated.connect((sender, widget) => {
       // Track the widget
       void tracker.add(widget);
-      // Update the service's active widget
-      service.activeKanban = widget;
+      // Update the manager's active widget
+      manager.activeKanban = widget;
     });
 
     // Track focus changes
     tracker.currentChanged.connect((_, widget) => {
-      service.activeKanban = widget;
+      manager.activeKanban = widget;
     });
 
     // Restore widgets on layout restore
@@ -161,7 +161,7 @@ const plugin: JupyterFrontEndPlugin<IKanban> = {
         });
     }
 
-    return service;
+    return manager;
   }
 };
 

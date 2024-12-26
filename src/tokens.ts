@@ -9,7 +9,7 @@ export interface IKanbanManager {
   /**
    * Get or create a kanban instance for a specific file
    */
-  getKanban(filePath: string): IKanbanInstance;
+  getKanban(filePath: string): IKanban;
 
   /**
    * Check if a kanban instance exists for a file
@@ -40,7 +40,7 @@ export interface IKanbanManager {
 /**
  * Individual Kanban instance interface
  */
-export interface IKanbanInstance {
+export interface IKanban {
   /**
    * The file path this kanban instance is associated with
    */
