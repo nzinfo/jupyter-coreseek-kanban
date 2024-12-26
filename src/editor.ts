@@ -136,10 +136,19 @@ export class CollaborativeEditorWidget extends DocumentWidget<Widget, DocumentRe
       return;
     }
     const model = this.context.model;
-    if (model.dirty) {
-      const editorModel = this._editor.editor.model;
-      const source = model.toString();
-      editorModel.sharedModel.setSource(source);
+    const editorModel = this._editor.editor.model;
+    const currentSource = editorModel.sharedModel.source;
+    const modelSource = model.toString();
+
+    console.log('Model change detected:', {
+      currentSource: currentSource.slice(0, 100) + '...', 
+      modelSource: modelSource.slice(0, 100) + '...'
+    });
+
+    // Only update if sources are different to prevent recursive updates
+    if (currentSource !== modelSource) {
+      console.log('Updating shared model source');
+      editorModel.sharedModel.setSource(modelSource);
     }
   }
 
