@@ -46,6 +46,9 @@ export class KanbanModel implements Kanban.IModel {
 
   constructor(options: Kanban.IModelOptions = {}) {
     this._sharedModel = options.sharedModel ?? new YFile();
+    
+    // Connect to the shared model's changed event
+    this._sharedModel.changed.connect(this._onSharedModelChanged, this);
   }
 
   get sharedModel(): YFile {
@@ -64,8 +67,59 @@ export class KanbanModel implements Kanban.IModel {
     if (this.isDisposed) {
       return;
     }
+    // Disconnect the event handler
+    this._sharedModel.changed.disconnect(this._onSharedModelChanged, this);
+    
     this._isDisposed = true;
     Signal.clearData(this);
+  }
+
+  /**
+   * Handler for shared model changes
+   */
+  private _onSharedModelChanged(sender: YFile, args: any): void {
+    console.log('Shared model changed:', args);
+/**
+ * Changes on Sequence-like data are expressed as Quill-inspired deltas.
+ *
+ * @source https://quilljs.com/docs/delta/
+ * /
+export type Delta<T> = Array<{
+  insert?: T;
+  delete?: number;
+  retain?: number;
+}>;
+
+/**
+* Changes on a map-like data.
+* /
+export type MapChanges = Map<string, {
+  action: 'add' | 'update' | 'delete';
+  oldValue: any;
+}>;
+@jupyter/ydoc/lib/api.d.ts
+
+Eg:
+    {
+      "sourceChange": [
+        {
+          "retain": 36
+        },
+        {
+          "delete": 11
+        },
+        {
+          "insert": "1"
+        }
+      ]
+    }
+    */
+    // Emit a change signal with the current source
+    this._changed.emit({
+      name: 'source',
+      oldValue: sender.source,
+      newValue: sender.source
+    });
   }
 
   /**

@@ -132,6 +132,13 @@ export class CollaborativeEditorWidget extends DocumentWidget<Widget, DocumentRe
   }
 
   private _onModelChanged(): void {
+    /*
+    const handler = (sender: ISharedText, args: SourceChange) => {
+        expect(args.sourceChange).toEqual([{ insert: 'foo' }]);
+        called = true;
+      };
+      model.sharedModel.changed.connect(handler);
+    */
     if (!this._editor) {
       return;
     }
