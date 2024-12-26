@@ -1,64 +1,102 @@
 import { Token } from '@lumino/coreutils';
 import { ISignal } from '@lumino/signaling';
-import { Widget } from '@lumino/widgets';
-import { ITask, TaskStatus } from './model';
+import { ITask, ICategory, IFeature } from './model';
 
 /**
- * The kanban token interface.
+ * Kanban Manager interface for managing multiple kanban instances
  */
-export interface IKanban {
+export interface IKanbanManager {
   /**
-   * Get all tasks
+   * Get or create a kanban instance for a specific file
    */
-  getTasks(): ITask[];
+  getKanban(filePath: string): IKanbanInstance;
 
   /**
-   * Get tasks by status
+   * Check if a kanban instance exists for a file
    */
-  getTasksByStatus(status: TaskStatus): ITask[];
+  hasKanban(filePath: string): boolean;
 
   /**
-   * Add a new task
+   * Remove a kanban instance
    */
-  addTask(task: Omit<ITask, 'id' | 'created' | 'updated'>): ITask;
+  removeKanban(filePath: string): void;
 
   /**
-   * Update a task
+   * List all active kanban instances
    */
-  updateTask(id: string, updates: Partial<Omit<ITask, 'id' | 'created'>>): ITask;
+  listKanbans(): string[];
 
   /**
-   * Delete a task
+   * Signal emitted when a new kanban instance is created
    */
-  deleteTask(id: string): void;
+  kanbanCreated: ISignal<this, string>;
 
   /**
-   * Set task status
+   * Signal emitted when a kanban instance is removed
    */
-  setTaskStatus(id: string, status: TaskStatus): ITask;
-
-  /**
-   * Signal emitted when a task changes
-   */
-  taskChanged: ISignal<this, ITask>;
-
-  /**
-   * Signal emitted when a category changes
-   */
-  categoryChanged: ISignal<this, string>;
-
-  /**
-   * Signal emitted when tasks are loaded from file
-   */
-  tasksLoaded: ISignal<this, ITask[]>;
-
-  /**
-   * The current active kanban widget, or null if none
-   */
-  activeKanban: Widget | null;
+  kanbanRemoved: ISignal<this, string>;
 }
 
 /**
- * The kanban token.
+ * Individual Kanban instance interface
  */
-export const IKanban = new Token<IKanban>('@coreseek/jupyter-kanban:IKanban');
+export interface IKanbanInstance {
+  /**
+   * The file path this kanban instance is associated with
+   */
+  readonly filePath: string;
+
+  /**
+   * Save current feature to file
+   */
+  saveFeatureFile(): Promise<boolean>;
+
+  /**
+   * Get the current feature
+   */
+  getFeature(): IFeature;
+
+  /**
+   * Stage Management
+   */
+  addStage(name: string, nameI18n?: string): boolean;
+  deleteStage(name: string): boolean;
+  listStages(): string[];
+
+  /**
+   * Category Management
+   */
+  addCategory(stageName: string, name: string, nameI18n?: string): boolean;
+  deleteCategory(name: string, takeOverCategory?: string): boolean;
+  listCategories(stageName: string): string[];
+
+  /**
+   * Task Management
+   */
+  addTask(title: string, description: string): string;
+  moveTask(taskId: string, toStageName: string, toCategoryName: string): boolean;
+  updateTaskTags(taskId: string, tags: string[]): boolean;
+  getTaskTags(taskId: string): string[];
+  deleteTask(taskId: string): boolean;
+  listTasks(stageName?: string, categoryName?: string): ITask[];
+  listUncategorizedTasks(): ITask[];
+
+  /**
+   * Task Details Management
+   */
+  updateTaskDetails(taskId: string, details: string): Promise<boolean>;
+  getTaskDetails(taskId: string, defaultDetails?: string): Promise<string>;
+
+  /**
+   * Signals
+   */
+  taskChanged: ISignal<this, ITask>;
+  categoryChanged: ISignal<this, ICategory>;
+  featureLoaded: ISignal<this, IFeature>;
+  featureSaved: ISignal<this, string>;
+}
+
+/**
+ * The kanban manager service token.
+ */
+export const IKanbanManager = new Token<IKanbanManager>('@coreseek/jupyter-kanban:IKanbanManager');
