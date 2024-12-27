@@ -1,7 +1,8 @@
 import { Signal } from '@lumino/signaling';
 import { IChangedArgs } from '@jupyterlab/coreutils';
-import { YFile } from '@jupyter/ydoc';
+import { YFile } from '@jupyter/ydoc'; //  ISharedFile
 import { DocumentModel, DocumentRegistry } from '@jupyterlab/docregistry';
+// import { ISharedFile } from '@jupyterlab/shared-models';
 
 /**
  * Interface for Kanban model options
@@ -18,7 +19,7 @@ export namespace Kanban {
     /**
      * The shared model for collaborative editing
      */
-    readonly sharedModel: YFile;
+    // readonly sharedModel: ISharedFile;
 
     /**
      * Signal for tracking changes in the model
@@ -42,37 +43,35 @@ export namespace Kanban {
  */
 export class KanbanModel extends DocumentModel implements Kanban.IModel {
   private _sharedModel: YFile;
-  private _isDisposed = false;
-  private _changed = new Signal<Kanban.IModel, IChangedArgs<string>>(this);
+  private _changed = new Signal<this, IChangedArgs<string>>(this);
+  readonly model_name = 'kanban';
 
   constructor(options: Kanban.IModelOptions = {}) {
+    super({ sharedModel: options.sharedModel });
     this._sharedModel = options.sharedModel ?? new YFile();
     
     // Connect to the shared model's changed event
     this._sharedModel.changed.connect(this._onSharedModelChanged, this);
+    
   }
 
-  get sharedModel(): YFile {
-    return this._sharedModel;
-  }
+  // override get sharedModel(): ISharedFile {
+  //    return this._sharedModel;
+  // }
 
-  get changed(): Signal<Kanban.IModel, IChangedArgs<string>> {
+  get changed(): Signal<this, IChangedArgs<string>> {
     return this._changed;
   }
 
-  get isDisposed(): boolean {
-    return this._isDisposed;
-  }
-
-  dispose(): void {
+  override dispose(): void {
     if (this.isDisposed) {
       return;
     }
     // Disconnect the event handler
     this._sharedModel.changed.disconnect(this._onSharedModelChanged, this);
     
-    this._isDisposed = true;
     Signal.clearData(this);
+    super.dispose();
   }
 
   /**

@@ -7,9 +7,9 @@ import {
   Widget 
 } from '@lumino/widgets';
 
-import { 
-  ToolbarButton 
-} from '@jupyterlab/apputils';
+//import { 
+//  ToolbarButton 
+//} from '@jupyterlab/apputils';
 
 import { 
   Signal 
@@ -38,11 +38,12 @@ export class KanbanWidget extends DocumentWidget<Widget, DocumentRegistry.IModel
     // Initialize the ready signal
     this._ready = new Signal<this, void>(this);
 
+    console.log(context.model);
     // Create the Kanban model
     this._model = new KanbanModel({
       sharedModel: context.model.sharedModel as YFile
     });
-
+    /*
     // Create a "Hello World" button
     const helloButton = new ToolbarButton({
       label: 'Add Hello World',
@@ -54,7 +55,7 @@ export class KanbanWidget extends DocumentWidget<Widget, DocumentRegistry.IModel
 
     // Append the button to the content
     content.node.appendChild(helloButton.node);
-
+    */
     // Handle context ready
     void context.ready.then(() => {
       this._ready.emit();
@@ -64,10 +65,12 @@ export class KanbanWidget extends DocumentWidget<Widget, DocumentRegistry.IModel
   /**
    * Handler for the Hello World button click
    */
+  /*
   private _onHelloButtonClicked(): void {
     // Append "hello world" to the shared model
     this._model.appendText('hello world');
   }
+  */
 
   /**
    * Getter for the ready signal
