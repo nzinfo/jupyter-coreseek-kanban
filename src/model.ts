@@ -1,6 +1,7 @@
 import { Signal } from '@lumino/signaling';
 import { IChangedArgs } from '@jupyterlab/coreutils';
 import { YFile } from '@jupyter/ydoc';
+import { DocumentModel, DocumentRegistry } from '@jupyterlab/docregistry';
 
 /**
  * Interface for Kanban model options
@@ -13,7 +14,7 @@ export namespace Kanban {
   /**
    * Interface for Kanban model
    */
-  export interface IModel {
+  export interface IModel extends DocumentRegistry.ICodeModel {
     /**
      * The shared model for collaborative editing
      */
@@ -39,7 +40,7 @@ export namespace Kanban {
 /**
  * Implementation of Kanban.IModel
  */
-export class KanbanModel implements Kanban.IModel {
+export class KanbanModel extends DocumentModel implements Kanban.IModel {
   private _sharedModel: YFile;
   private _isDisposed = false;
   private _changed = new Signal<Kanban.IModel, IChangedArgs<string>>(this);
@@ -85,16 +86,13 @@ export class KanbanModel implements Kanban.IModel {
  * Changes on Sequence-like data are expressed as Quill-inspired deltas.
  *
  * @source https://quilljs.com/docs/delta/
- * /
+ * 
 export type Delta<T> = Array<{
   insert?: T;
   delete?: number;
   retain?: number;
 }>;
 
-/**
-* Changes on a map-like data.
-* /
 export type MapChanges = Map<string, {
   action: 'add' | 'update' | 'delete';
   oldValue: any;

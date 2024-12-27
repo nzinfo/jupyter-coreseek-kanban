@@ -13,6 +13,7 @@ import {
 } from '@jupyterlab/docregistry';
 import { Contents } from '@jupyterlab/services';
 import { KanbanWidget } from './widget';
+import { KanbanModel } from './model';
 import { PathExt } from '@jupyterlab/coreutils';
 import { IMarkdownViewerTracker } from '@jupyterlab/markdownviewer';
 
@@ -47,6 +48,17 @@ class KanbanModelFactory extends TextModelFactory {
    */
   get fileFormat(): Contents.FileFormat {
     return 'text';
+  }
+
+  /**
+   * Create a new model.
+   *
+   * @param options - Model options.
+   *
+   * @returns A new document model.
+   */
+  createNew(options: DocumentRegistry.IModelOptions<any> = {}): DocumentRegistry.ICodeModel {
+    return new KanbanModel();
   }
 }
 
