@@ -14,8 +14,9 @@ import {
   caretLeftIcon,
   caretRightIcon
 } from '@jupyterlab/ui-components';
-import { TaskCard, ITaskData } from './TaskCard';
+import { TaskCard, ITaskData, MIME_TYPE } from './TaskCard';
 import { Panel } from '@lumino/widgets';
+import { Drag } from '@lumino/dragdrop';
 
 /**
  * Task board header component
@@ -129,26 +130,33 @@ class TaskBoardContent extends ReactWidget {
     const columnContent = element.querySelector('.jp-TaskBoard-columnContent') as HTMLElement;
     if (!columnContent) return;
 
-    columnContent.addEventListener('dragover', (event: DragEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-      event.dataTransfer!.dropEffect = 'move';
+    // Handle Lumino drag events
+    element.addEventListener('p-dragover', (event: Event) => {
+      const dragEvent = event as Drag.Event;
+      if (!dragEvent.mimeData.hasData(MIME_TYPE)) {
+        return;
+      }
+      dragEvent.preventDefault();
+      dragEvent.stopPropagation();
+      dragEvent.dropAction = dragEvent.proposedAction;
       columnContent.classList.add('jp-TaskBoard-dropTarget');
     });
 
-    columnContent.addEventListener('dragleave', () => {
+    element.addEventListener('p-dragleave', () => {
       columnContent.classList.remove('jp-TaskBoard-dropTarget');
     });
 
-    columnContent.addEventListener('drop', (event: DragEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
+    element.addEventListener('p-drop', (event: Event) => {
+      const dragEvent = event as Drag.Event;
+      if (!dragEvent.mimeData.hasData(MIME_TYPE)) {
+        return;
+      }
+      dragEvent.preventDefault();
+      dragEvent.stopPropagation();
       columnContent.classList.remove('jp-TaskBoard-dropTarget');
 
-      const data = event.dataTransfer!.getData('application/x-task');
-      if (!data) return;
-
       try {
+        const data = dragEvent.mimeData.getData(MIME_TYPE) as string;
         const taskData = JSON.parse(data) as ITaskData;
         taskData.status = element.dataset.status as ITaskData['status'];
         

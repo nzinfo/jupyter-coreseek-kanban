@@ -5,8 +5,9 @@ import {
   ReactWidget,
   SidePanel
 } from '@jupyterlab/ui-components';
-import { TaskCard, ITaskData } from './TaskCard';
+import { TaskCard, ITaskData, MIME_TYPE } from './TaskCard';
 import { Panel } from '@lumino/widgets';
+import { Drag } from '@lumino/dragdrop';
 
 /**
  * Task list component showing all tasks
@@ -31,26 +32,33 @@ class TaskList extends ReactWidget {
   private _setupDropZone(element: HTMLElement | null): void {
     if (!element) return;
 
-    element.addEventListener('dragover', (event: DragEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-      event.dataTransfer!.dropEffect = 'move';
+    // Handle Lumino drag events
+    element.addEventListener('p-dragover', (event: Event) => {
+      const dragEvent = event as Drag.Event;
+      if (!dragEvent.mimeData.hasData(MIME_TYPE)) {
+        return;
+      }
+      dragEvent.preventDefault();
+      dragEvent.stopPropagation();
+      dragEvent.dropAction = dragEvent.proposedAction;
       element.classList.add('jp-TaskList-dropTarget');
     });
 
-    element.addEventListener('dragleave', () => {
+    element.addEventListener('p-dragleave', () => {
       element.classList.remove('jp-TaskList-dropTarget');
     });
 
-    element.addEventListener('drop', (event: DragEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
+    element.addEventListener('p-drop', (event: Event) => {
+      const dragEvent = event as Drag.Event;
+      if (!dragEvent.mimeData.hasData(MIME_TYPE)) {
+        return;
+      }
+      dragEvent.preventDefault();
+      dragEvent.stopPropagation();
       element.classList.remove('jp-TaskList-dropTarget');
 
-      const data = event.dataTransfer!.getData('application/x-task');
-      if (!data) return;
-
       try {
+        const data = dragEvent.mimeData.getData(MIME_TYPE) as string;
         const taskData = JSON.parse(data) as ITaskData;
         const taskCard = new TaskCard(taskData);
         const panel = new Panel();
