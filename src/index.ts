@@ -130,7 +130,12 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
     // Add a custom widget factory that checks for Kanban files
     app.docRegistry.addWidgetFactory(kanbanFactory);
-    
+    /* 
+    重要说明： 勿删除
+    目前没有办法重载一个已经存在关联的扩展名的 editor, 会被 docmanager-extension 在 onSettingsUpdated 时
+    重新设置，通过 setDefaultWidgetFactory
+    */
+
     // Add the context menu item
     app.commands.addCommand('kanban:open', {
       label: 'Open as Kanban',
