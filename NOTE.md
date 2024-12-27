@@ -200,16 +200,31 @@ Model 通过 接口函数 完成 默认 Task 文件的构建
 
 # 界面原型
 
-1. 分左右两部分，左边小，右边大
+1. 界面整体分二部分
 
-   - 左边的部分，上下两部分
-      - 左上，Backlog 的任务列表
-      - 左下，Done 的任务列表
-   - 左边部分的顶部为搜索框，用于搜索任务
-   - 右边部分，根据其他（非 Backlog，Done）Stage 的数量 分多个部分
-      - 默认配置下，分 2 个部分，分别为
-         - In Progress
-         - Review
+   - 左边的部分，从上到下分别为
+      - 整体布局类似 jupyterlab 的 Extension Manager
+      - 搜索框， 用于搜索任务
+      - 在 Backlog 中的任务 / Done 的任务 / Recycle 的任务
+         - 与 Extension Manager 中 Warning / Installed 类似，可以切换，
+         - 不直接提供 Delete 操作，需要先移动到 Recycle， 然后清空。
+         - 类似 Workspaces 中的 Delete All, Recycle 中 有 Clear All , 显示在 Panel 的 TitleBar 上（右侧）
+   - 右边部分，类似 Running Terminals And Kernels
+      - 顶部为工具栏，最右侧为按钮 ...
+      - 点击按钮 '...' 弹出菜单
+         - New Stage
+         - New Category
+         - '------' 分割线条
+         - Delete , 点击之后 弹出 类似 "Tabs and Running Sessions" 的对话框
+            - 列出所有 Stage 和 Category，采用类似的树形结构
+               - Level-1 Entry 为 Stage
+               - Level-2 Entry 为 Category
+            - 点击 Item 右部 的按钮 'recycle' 可以删除
+      - 每个 Stage 对应一个区域，可以展开 / 收起
+        - 可以通过拖动 对 Stage 排序
+        
+      - 每个 Stage 横向列出 多个 Category, 类似 Kanban Board
+        - 可以通过拖动 对 Category 排序
 
 2. Task 表现为 Card 的形态
 

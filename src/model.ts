@@ -1,7 +1,8 @@
 import { Signal } from '@lumino/signaling';
 import { IChangedArgs } from '@jupyterlab/coreutils';
 import { YFile } from '@jupyter/ydoc'; //  ISharedFile
-import { DocumentModel, DocumentRegistry } from '@jupyterlab/docregistry';
+import { DocumentModel, DocumentRegistry, TextModelFactory } from '@jupyterlab/docregistry';
+import { Contents } from '@jupyterlab/services';
 // import { ISharedFile } from '@jupyterlab/shared-models';
 
 /**
@@ -136,5 +137,50 @@ Eg:
       oldValue: currentSource,
       newValue: newSource
     });
+  }
+}
+
+/**
+ * An implementation of a model factory for kanban files.
+ */
+export class KanbanModelFactory extends TextModelFactory {
+  /**
+   * The name of the model type.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get name(): string {
+    return 'kanban_model';
+  }
+
+  /**
+   * The type of the file.
+   *
+   * #### Notes
+   * This is a read-only property.
+   */
+  get contentType(): Contents.ContentType {
+    return 'file';
+  }
+
+  /**
+   * The format of the file.
+   *
+   * This is a read-only property.
+   */
+  get fileFormat(): Contents.FileFormat {
+    return 'text';
+  }
+
+  /**
+   * Create a new model.
+   *
+   * @param options - Model options.
+   *
+   * @returns A new document model.
+   */
+  createNew(options: DocumentRegistry.IModelOptions<any> = {}): DocumentRegistry.ICodeModel {
+    return new KanbanModel();
   }
 }

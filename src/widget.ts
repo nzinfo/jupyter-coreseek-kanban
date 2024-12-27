@@ -1,6 +1,8 @@
 import {
   DocumentRegistry,
-  DocumentWidget
+  ABCWidgetFactory,
+  DocumentWidget,
+  IDocumentWidget
 } from '@jupyterlab/docregistry';
 
 import { 
@@ -17,6 +19,8 @@ import {
 
 import { KanbanModel } from './model';
 import { YFile } from '@jupyter/ydoc';
+
+import { PathExt } from '@jupyterlab/coreutils';
 
 /**
  * A widget for Kanban board functionality
@@ -89,4 +93,42 @@ export class KanbanWidget extends DocumentWidget<Widget, DocumentRegistry.IModel
     this._model.dispose();
     super.dispose();
   }
+}
+
+/**
+ * A widget factory for Kanban widgets.
+ */
+export class KanbanWidgetFactory extends ABCWidgetFactory<
+  IDocumentWidget,
+  DocumentRegistry.IModel
+> {
+  constructor(
+    defaultFactory: DocumentRegistry.WidgetFactory,
+    options: DocumentRegistry.IWidgetFactoryOptions<IDocumentWidget>
+  ) {
+    super(options);
+    this.defaultWidgetFactory = defaultFactory;
+  }
+
+  /**
+   * Check if the file should be opened with Kanban widget
+   * @param context Document context
+   */
+  static isKanbanFile(context: DocumentRegistry.Context): boolean {
+    const fileName = PathExt.basename(context.path);
+    return fileName.toLowerCase().includes('kanban');
+  }
+
+  /**
+   * Create a new widget for the document
+   * @param context Document context
+   */
+  protected createNewWidget(context: DocumentRegistry.Context): IDocumentWidget {
+    if (!KanbanWidgetFactory.isKanbanFile(context)) {
+      return this.defaultWidgetFactory.createNew(context) as IDocumentWidget;
+    }
+    return new KanbanWidget(context);
+  }
+
+  readonly defaultWidgetFactory: DocumentRegistry.WidgetFactory;
 }
