@@ -20,19 +20,19 @@ export class KanbanLayout extends SplitPanel {
     this._translator = options.translator || nullTranslator;
     
     // Create left panel widget
-    const leftWidget = new TaskListPanel({ translator: this._translator });
-    leftWidget.addClass('jp-KanbanLayout-left');
+    const tasklistWidget = new TaskListPanel({ translator: this._translator });
+    tasklistWidget.addClass('jp-KanbanLayout-right');
     
     // Create right panel widget
-    const rightWidget = new TaskBoardPanel({ translator: this._translator });
-    rightWidget.addClass('jp-KanbanLayout-right');
+    const boardWidget = new TaskBoardPanel({ translator: this._translator });
+    boardWidget.addClass('jp-KanbanLayout-left');
     
     // Add widgets to the split panel
-    this.addWidget(leftWidget);
-    this.addWidget(rightWidget);
+    this.addWidget(boardWidget);
+    this.addWidget(tasklistWidget);
     
     // Set the relative sizes of the panels (30% left, 70% right)
-    this.setRelativeSizes([0.3, 0.7]);
+    this.setRelativeSizes([0.8, 0.2]);
     
     this.id = 'jp-kanban-layout';
     this.addClass('jp-KanbanLayout');

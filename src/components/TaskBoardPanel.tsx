@@ -10,7 +10,9 @@ import {
   ToolbarButtonComponent,
   caretUpEmptyThinIcon,
   caretDownEmptyThinIcon,
-  ellipsesIcon
+  numberingIcon,
+  caretLeftIcon,
+  caretRightIcon
 } from '@jupyterlab/ui-components';
 
 /**
@@ -20,6 +22,7 @@ class TaskBoardHeader extends ReactWidget {
   constructor(protected trans: TranslationBundle) {
     super();
     this.addClass('jp-TaskBoard-header');
+    this._tasklistVisible = true;
   }
 
   render(): JSX.Element {
@@ -33,16 +36,39 @@ class TaskBoardHeader extends ReactWidget {
           disabled={false}
         />
         <h2>{this.trans.__('Task Board')}</h2>
-        <ToolbarButtonComponent
-          icon={ellipsesIcon}
-          onClick={() => {
-            console.log('More options clicked');
-          }}
-          tooltip={this.trans.__('More options')}
-        />
+        <div className="jp-TaskBoard-headerButtons">
+          <ToolbarButtonComponent
+            icon={numberingIcon}
+            onClick={() => {
+              console.log('More options clicked');
+            }}
+            tooltip={this.trans.__('More options')}
+          />
+          <ToolbarButtonComponent
+            icon={this._tasklistVisible ? caretRightIcon : caretLeftIcon}
+            onClick={() => {
+              this._tasklistVisible = !this._tasklistVisible;
+              if (this._onTasklistToggle) {
+                this._onTasklistToggle(this._tasklistVisible);
+              }
+              this.update();
+            }}
+            tooltip={this._tasklistVisible ? this.trans.__('Hide task list') : this.trans.__('Show task list')}
+          />
+        </div>
       </>
     );
   }
+
+  /**
+   * Set the callback for tasklist visibility toggle
+   */
+  setTasklistToggleCallback(callback: (visible: boolean) => void): void {
+    this._onTasklistToggle = callback;
+  }
+
+  private _tasklistVisible: boolean;
+  private _onTasklistToggle: ((visible: boolean) => void) | null = null;
 }
 
 /**
@@ -107,7 +133,11 @@ export class TaskBoardPanel extends SidePanel {
     this.trans = translator.load('jupyter-coreseek-kanban');
 
     // Add header
-    this.header.addWidget(new TaskBoardHeader(this.trans));
+    const header = new TaskBoardHeader(this.trans);
+    header.setTasklistToggleCallback((visible) => {
+      console.log('Tasklist visibility toggled:', visible);
+    });
+    this.header.addWidget(header);
 
     // Add main content panel with toolbar
     const contentPanel = new PanelWithToolbar();

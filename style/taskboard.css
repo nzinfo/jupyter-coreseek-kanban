@@ -9,35 +9,43 @@
 .jp-TaskBoard-header {
   padding: 4px 0px 4px 16px;
   width: 100%;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(200px, 300px) 1fr auto;
   align-items: center;
   gap: 16px;
-  position: relative;
 }
 
 .jp-TaskBoard-header h2 {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
   margin: 0;
   font-size: var(--jp-ui-font-size2);
   font-weight: 600;
   color: var(--jp-ui-font-color0);
   text-align: center;
   white-space: nowrap;
+  justify-self: center;
 }
 
 /* Search box styles */
 .jp-TaskBoard-header .jp-FilterBox {
-  flex: 0 1 300px;
-  min-width: 200px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Header buttons container */
+.jp-TaskBoard-headerButtons {
+  display: flex;
+  gap: 4px;
+  padding-right: 8px;
+}
+
+/* Button styles */
+.jp-TaskBoard-headerButtons .jp-ToolbarButtonComponent {
+  margin: 0;
 }
 
 /* More options button styles */
 .jp-TaskBoard-header .jp-ToolbarButtonComponent {
-  flex: 0 0 auto;
   padding-right: 8px;
-  margin-left: auto;
 }
 
 .jp-TaskBoard-section {
@@ -69,7 +77,6 @@
 
 .jp-TaskBoard-columns {
   display: flex;
-  gap: 16px;
   height: 100%;
   min-height: 400px;
 }
@@ -77,10 +84,14 @@
 .jp-TaskBoard-column {
   flex: 1;
   min-width: 250px;
-  background: var(--jp-layout-color2);
   border-radius: 4px;
   display: flex;
   flex-direction: column;
+  border-left: var(--jp-border-width) solid var(--jp-border-color2);
+}
+
+.jp-TaskBoard-column:first-of-type {
+  border-left: none;
 }
 
 .jp-TaskBoard-columnHeader {
