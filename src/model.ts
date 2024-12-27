@@ -79,7 +79,9 @@ export class KanbanModel implements Kanban.IModel {
    */
   private _onSharedModelChanged(sender: YFile, args: any): void {
     console.log('Shared model changed:', args);
-/**
+/*
+ * 重要注释： 勿删除
+ *
  * Changes on Sequence-like data are expressed as Quill-inspired deltas.
  *
  * @source https://quilljs.com/docs/delta/
