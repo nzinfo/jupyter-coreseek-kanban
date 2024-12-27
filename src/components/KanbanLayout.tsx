@@ -3,18 +3,8 @@ import { SplitPanel } from '@lumino/widgets';
 import { Message } from '@lumino/messaging';
 import { ITranslator, nullTranslator } from '@jupyterlab/translation';
 import React from 'react';
+import { TaskPanel } from './TaskPanel';
 
-/**
- * Left panel test component
- */
-const LeftPanelTest: React.FC = () => {
-  return (
-    <div style={{ padding: '16px' }}>
-      <h2>Left Panel</h2>
-      <p>This is the left panel content</p>
-    </div>
-  );
-};
 
 /**
  * Right panel test component
@@ -41,8 +31,8 @@ export class KanbanLayout extends SplitPanel {
 
     this._translator = options.translator || nullTranslator;
     
-    // Create left panel widget
-    const leftWidget = ReactWidget.create(<LeftPanelTest />);
+    // Create left panel widget (TaskPanel)
+    const leftWidget = new TaskPanel({ translator: this._translator });
     leftWidget.addClass('jp-KanbanLayout-left');
     
     // Create right panel widget

@@ -1,0 +1,78 @@
+.jp-TaskPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 300px;
+  color: var(--jp-ui-font-color1);
+  background: var(--jp-layout-color1);
+}
+
+.jp-TaskPanel-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.jp-TaskPanel-header {
+  padding: 8px;
+  border-bottom: var(--jp-border-width) solid var(--jp-border-color2);
+}
+
+.jp-TaskPanel-sections {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Section styles */
+.jp-TaskPanel-backlog,
+.jp-TaskPanel-done,
+.jp-TaskPanel-recycle {
+  margin-bottom: 1px;
+  background: var(--jp-layout-color1);
+}
+
+.jp-TaskPanel-backlog .jp-Toolbar,
+.jp-TaskPanel-done .jp-Toolbar,
+.jp-TaskPanel-recycle .jp-Toolbar {
+  min-height: 24px;
+  padding: 2px;
+  background: var(--jp-toolbar-background);
+}
+
+.jp-TaskPanel-backlog .jp-Toolbar-item,
+.jp-TaskPanel-done .jp-Toolbar-item,
+.jp-TaskPanel-recycle .jp-Toolbar-item {
+  margin-right: 4px;
+}
+
+/* List styles */
+.jp-TaskPanel-listContent {
+  padding: 8px;
+}
+
+.jp-TaskPanel-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+.jp-TaskPanel-item:hover {
+  background-color: var(--jp-layout-color2);
+}
+
+.jp-TaskPanel-itemTitle {
+  flex: 1;
+  margin-right: 8px;
+  font-size: var(--jp-ui-font-size1);
+  color: var(--jp-ui-font-color1);
+}
+
+.jp-TaskPanel-itemStatus {
+  font-size: var(--jp-ui-font-size0);
+  color: var(--jp-ui-font-color2);
+  text-transform: capitalize;
+}
