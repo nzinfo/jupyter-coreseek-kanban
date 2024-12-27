@@ -1,0 +1,96 @@
+/* Task Board Panel Styles */
+.jp-TaskBoard-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--jp-layout-color1);
+}
+
+.jp-TaskBoard-header {
+  padding: 8px 16px;
+  border-bottom: var(--jp-border-width) solid var(--jp-border-color2);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.jp-TaskBoard-header h2 {
+  margin: 0;
+  font-size: var(--jp-ui-font-size2);
+  font-weight: 600;
+  color: var(--jp-ui-font-color0);
+  flex: 1;
+  text-align: center;
+}
+
+/* Search box styles */
+.jp-TaskBoard-header .jp-FilterBox {
+  flex: 2;
+  max-width: 300px;
+}
+
+/* More options button styles */
+.jp-TaskBoard-header .jp-ToolbarButton {
+  margin-left: auto;
+}
+
+.jp-TaskBoard-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--jp-layout-color1);
+  overflow: hidden;
+}
+
+/* Toolbar styles */
+.jp-TaskBoard-section .jp-Toolbar {
+  padding: 4px;
+  border-bottom: var(--jp-border-width) solid var(--jp-border-color2);
+  background: var(--jp-layout-color1);
+  display: flex;
+  align-items: center;
+}
+
+.jp-TaskBoard-section .jp-Toolbar-item {
+  margin-right: 4px;
+}
+
+.jp-TaskBoard-content {
+  flex: 1;
+  padding: 16px;
+  overflow: auto;
+}
+
+.jp-TaskBoard-columns {
+  display: flex;
+  gap: 16px;
+  height: 100%;
+  min-height: 400px;
+}
+
+.jp-TaskBoard-column {
+  flex: 1;
+  min-width: 250px;
+  background: var(--jp-layout-color2);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.jp-TaskBoard-columnHeader {
+  padding: 8px 16px;
+  border-bottom: var(--jp-border-width) solid var(--jp-border-color2);
+}
+
+.jp-TaskBoard-columnHeader h3 {
+  margin: 0;
+  font-size: var(--jp-ui-font-size1);
+  font-weight: 600;
+  color: var(--jp-ui-font-color0);
+}
+
+.jp-TaskBoard-columnContent {
+  flex: 1;
+  padding: 8px;
+  overflow-y: auto;
+}

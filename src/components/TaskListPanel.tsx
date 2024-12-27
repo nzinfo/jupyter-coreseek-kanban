@@ -1,40 +1,12 @@
 import React from 'react';
 import { ITranslator, TranslationBundle } from '@jupyterlab/translation';
 import {
-  FilterBox,
   PanelWithToolbar,
   ReactWidget,
   // refreshIcon,
   SidePanel,
   // ToolbarButton
 } from '@jupyterlab/ui-components';
-
-/**
- * Search header component for the task list
- */
-class TaskListHeader extends ReactWidget {
-  constructor(
-    protected trans: TranslationBundle,
-    protected searchInputRef: React.RefObject<HTMLInputElement>
-  ) {
-    super();
-    this.addClass('jp-TaskList-header');
-  }
-
-  render(): JSX.Element {
-    return (
-      <div className="jp-TaskList-header">
-        <FilterBox
-          placeholder={this.trans.__('Search tasks...')}
-          updateFilter={() => {}}
-          useFuzzyFilter={false}
-          caseSensitive={false}
-          disabled={false}
-        />
-      </div>
-    );
-  }
-}
 
 /**
  * Task list component showing all tasks
@@ -65,13 +37,10 @@ export class TaskListPanel extends SidePanel {
     const { translator } = options;
     super({ translator });
     
-    this._searchInputRef = React.createRef<HTMLInputElement>();
+    // this._searchInputRef = React.createRef<HTMLInputElement>();
     this.addClass('jp-TaskList-panel');
 
     this.trans = translator.load('jupyter-coreseek-kanban');
-
-    // Add header with search
-    this.header.addWidget(new TaskListHeader(this.trans, this._searchInputRef));
 
     // Add Backlog panel
     const backlogPanel = new PanelWithToolbar();
@@ -88,11 +57,13 @@ export class TaskListPanel extends SidePanel {
     this.addWidget(donePanel);
 
     // Add Recycle panel
+    /* // 暂不删除，单独的回收站 还是直接在 item 中删除， 待考虑
     const recyclePanel = new PanelWithToolbar();
     recyclePanel.addClass('jp-TaskList-section');
     recyclePanel.title.label = this.trans.__('Recycle');
     recyclePanel.addWidget(new TaskList(this.trans));
     this.addWidget(recyclePanel);
+    */
 
     /* 不要删除，保留参考
     // Add refresh button to toolbar
@@ -110,7 +81,6 @@ export class TaskListPanel extends SidePanel {
     */
   }
 
-  private readonly _searchInputRef: React.RefObject<HTMLInputElement>;
   protected trans: TranslationBundle;
 }
 

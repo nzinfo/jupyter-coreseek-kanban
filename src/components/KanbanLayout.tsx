@@ -1,21 +1,10 @@
-import { ReactWidget } from '@jupyterlab/ui-components';
+// import { ReactWidget } from '@jupyterlab/ui-components';
 import { SplitPanel } from '@lumino/widgets';
 import { Message } from '@lumino/messaging';
 import { ITranslator, nullTranslator } from '@jupyterlab/translation';
-import React from 'react';
+// import React from 'react';
 import { TaskListPanel } from './TaskListPanel';
-
-/**
- * Right panel test component
- */
-const RightPanelTest: React.FC = () => {
-  return (
-    <div style={{ padding: '16px' }}>
-      <h2>Right Panel</h2>
-      <p>This is the right panel content</p>
-    </div>
-  );
-};
+import { TaskBoardPanel } from './TaskBoardPanel';
 
 /**
  * The main layout for the Kanban board.
@@ -35,15 +24,15 @@ export class KanbanLayout extends SplitPanel {
     leftWidget.addClass('jp-KanbanLayout-left');
     
     // Create right panel widget
-    const rightWidget = ReactWidget.create(<RightPanelTest />);
+    const rightWidget = new TaskBoardPanel({ translator: this._translator });
     rightWidget.addClass('jp-KanbanLayout-right');
     
     // Add widgets to the split panel
     this.addWidget(leftWidget);
     this.addWidget(rightWidget);
     
-    // Set the relative sizes of the panels (40% left, 60% right)
-    this.setRelativeSizes([0.4, 0.6]);
+    // Set the relative sizes of the panels (30% left, 70% right)
+    this.setRelativeSizes([0.3, 0.7]);
     
     this.id = 'jp-kanban-layout';
     this.addClass('jp-KanbanLayout');
