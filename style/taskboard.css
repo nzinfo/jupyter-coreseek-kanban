@@ -110,4 +110,10 @@
   flex: 1;
   padding: 8px;
   overflow-y: auto;
+  min-height: 100px;
+}
+
+.jp-TaskBoard-columnContent.jp-TaskBoard-dropTarget {
+  background-color: var(--jp-layout-color2);
+  border: 2px dashed var(--jp-border-color1);
 }

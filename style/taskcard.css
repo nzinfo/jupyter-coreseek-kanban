@@ -1,0 +1,33 @@
+.jp-TaskCard {
+  margin: 8px;
+  padding: 8px;
+  background: var(--jp-layout-color0);
+  border: var(--jp-border-width) solid var(--jp-border-color2);
+  border-radius: 4px;
+  cursor: move;
+  user-select: none;
+}
+
+.jp-TaskCard:hover {
+  box-shadow: var(--jp-elevation-z2);
+}
+
+.jp-TaskCard.jp-TaskCard-dragging {
+  opacity: 0.5;
+}
+
+.jp-TaskCard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.jp-TaskCard-title {
+  font-weight: 500;
+  color: var(--jp-ui-font-color0);
+}
+
+.jp-TaskCard-status {
+  font-size: var(--jp-ui-font-size0);
+  color: var(--jp-ui-font-color2);
+}

@@ -14,6 +14,8 @@ import {
   caretLeftIcon,
   caretRightIcon
 } from '@jupyterlab/ui-components';
+import { TaskCard, ITaskData } from './TaskCard';
+import { Panel } from '@lumino/widgets';
 
 /**
  * Task board header component
@@ -77,13 +79,14 @@ class TaskBoardHeader extends ReactWidget {
 class TaskBoardContent extends ReactWidget {
   constructor(protected trans: TranslationBundle) {
     super();
+    this._setupDropZone = this._setupDropZone.bind(this);
   }
 
   render(): JSX.Element {
     return (
       <div className="jp-TaskBoard-content">
         <div className="jp-TaskBoard-columns">
-          <div className="jp-TaskBoard-column">
+          <div className="jp-TaskBoard-column" data-status="todo" ref={this._setupDropZone}>
             <div className="jp-TaskBoard-columnHeader">
               <h3>{this.trans.__('Todo')}</h3>
             </div>
@@ -91,7 +94,7 @@ class TaskBoardContent extends ReactWidget {
               {/* Todo tasks will go here */}
             </div>
           </div>
-          <div className="jp-TaskBoard-column">
+          <div className="jp-TaskBoard-column" data-status="doing" ref={this._setupDropZone}>
             <div className="jp-TaskBoard-columnHeader">
               <h3>{this.trans.__('Doing')}</h3>
             </div>
@@ -99,7 +102,7 @@ class TaskBoardContent extends ReactWidget {
               {/* Doing tasks will go here */}
             </div>
           </div>
-          <div className="jp-TaskBoard-column">
+          <div className="jp-TaskBoard-column" data-status="review" ref={this._setupDropZone}>
             <div className="jp-TaskBoard-columnHeader">
               <h3>{this.trans.__('Review')}</h3>
             </div>
@@ -107,7 +110,7 @@ class TaskBoardContent extends ReactWidget {
               {/* Review tasks will go here */}
             </div>
           </div>
-          <div className="jp-TaskBoard-column">
+          <div className="jp-TaskBoard-column" data-status="done" ref={this._setupDropZone}>
             <div className="jp-TaskBoard-columnHeader">
               <h3>{this.trans.__('Done')}</h3>
             </div>
@@ -118,6 +121,49 @@ class TaskBoardContent extends ReactWidget {
         </div>
       </div>
     );
+  }
+
+  private _setupDropZone(element: HTMLElement | null): void {
+    if (!element) return;
+
+    const columnContent = element.querySelector('.jp-TaskBoard-columnContent') as HTMLElement;
+    if (!columnContent) return;
+
+    columnContent.addEventListener('dragover', (event: DragEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      event.dataTransfer!.dropEffect = 'move';
+      columnContent.classList.add('jp-TaskBoard-dropTarget');
+    });
+
+    columnContent.addEventListener('dragleave', () => {
+      columnContent.classList.remove('jp-TaskBoard-dropTarget');
+    });
+
+    columnContent.addEventListener('drop', (event: DragEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      columnContent.classList.remove('jp-TaskBoard-dropTarget');
+
+      const data = event.dataTransfer!.getData('application/x-task');
+      if (!data) return;
+
+      try {
+        const taskData = JSON.parse(data) as ITaskData;
+        taskData.status = element.dataset.status as ITaskData['status'];
+        
+        // Create new task card
+        const taskCard = new TaskCard(taskData);
+        const panel = new Panel();
+        panel.addWidget(taskCard);
+        
+        // Clear existing content and add the new task
+        columnContent.innerHTML = '';
+        columnContent.appendChild(panel.node);
+      } catch (error) {
+        console.error('Error handling task drop:', error);
+      }
+    });
   }
 }
 

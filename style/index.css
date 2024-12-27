@@ -1,3 +1,4 @@
-@import url('base.css');
-@import url('tasklist.css');
-@import url('taskboard.css');
+@import url('./base.css');
+@import url('./tasklist.css');
+@import url('./taskboard.css');
+@import url('./taskcard.css');

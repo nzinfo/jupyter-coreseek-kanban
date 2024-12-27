@@ -14,7 +14,7 @@
 
 .jp-TaskList-section {
   background: var(--jp-layout-color1);
-  margin-bottom: 8px;
+  margin-bottom: 16px;
 }
 
 .jp-TaskList-section .lm-AccordionPanel-title {
@@ -26,8 +26,8 @@
 
 .jp-TaskList-content {
   padding: 8px;
-  max-height: 300px;
   overflow-y: auto;
+  min-height: 100px;
 }
 
 .jp-TaskList-list {
@@ -37,9 +37,10 @@
 }
 
 .jp-TaskList-item {
+  margin: 8px 0;
   padding: 8px;
-  margin-bottom: 4px;
-  background: var(--jp-layout-color2);
+  background: var(--jp-layout-color0);
+  border: var(--jp-border-width) solid var(--jp-border-color2);
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.1s ease;
@@ -47,6 +48,11 @@
 
 .jp-TaskList-item:hover {
   background: var(--jp-layout-color3);
+}
+
+.jp-TaskList-dropTarget {
+  background-color: var(--jp-layout-color2);
+  border: 2px dashed var(--jp-border-color1);
 }
 
 /* Toolbar styles */
