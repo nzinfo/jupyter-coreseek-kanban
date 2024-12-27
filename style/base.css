@@ -24,3 +24,29 @@
     width: 100%;
     padding: var(--jp-code-padding);
 }
+
+#jp-kanban-layout {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.jp-KanbanLayout {
+    background: var(--jp-layout-color1);
+}
+
+.jp-KanbanLayout .lm-SplitPanel-handle {
+    background-color: var(--jp-border-color2);
+}
+
+.jp-KanbanLayout-left {
+    min-width: 300px;
+    border-right: var(--jp-border-width) solid var(--jp-border-color2);
+    background: var(--jp-layout-color1);
+}
+
+.jp-KanbanLayout-right {
+    background: var(--jp-layout-color1);
+}
