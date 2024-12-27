@@ -24,7 +24,7 @@ class TaskBoardHeader extends ReactWidget {
 
   render(): JSX.Element {
     return (
-      <div className="jp-TaskBoard-header">
+      <>
         <FilterBox
           placeholder={this.trans.__('Search tasks...')}
           updateFilter={() => {}}
@@ -40,7 +40,7 @@ class TaskBoardHeader extends ReactWidget {
           }}
           tooltip={this.trans.__('More options')}
         />
-      </div>
+      </>
     );
   }
 }

@@ -7,30 +7,36 @@
 }
 
 .jp-TaskBoard-header {
-  padding: 8px 16px;
-  border-bottom: var(--jp-border-width) solid var(--jp-border-color2);
+  padding: 4px 0px 4px 16px;
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 16px;
+  position: relative;
 }
 
 .jp-TaskBoard-header h2 {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   margin: 0;
   font-size: var(--jp-ui-font-size2);
   font-weight: 600;
   color: var(--jp-ui-font-color0);
-  flex: 1;
   text-align: center;
+  white-space: nowrap;
 }
 
 /* Search box styles */
 .jp-TaskBoard-header .jp-FilterBox {
-  flex: 2;
-  max-width: 300px;
+  flex: 0 1 300px;
+  min-width: 200px;
 }
 
 /* More options button styles */
-.jp-TaskBoard-header .jp-ToolbarButton {
+.jp-TaskBoard-header .jp-ToolbarButtonComponent {
+  flex: 0 0 auto;
+  padding-right: 8px;
   margin-left: auto;
 }
 
