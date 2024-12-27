@@ -4,9 +4,9 @@ import {
   FilterBox,
   PanelWithToolbar,
   ReactWidget,
-  refreshIcon,
+  // refreshIcon,
   SidePanel,
-  ToolbarButton
+  // ToolbarButton
 } from '@jupyterlab/ui-components';
 
 /**
@@ -18,22 +18,20 @@ class TaskListHeader extends ReactWidget {
     protected searchInputRef: React.RefObject<HTMLInputElement>
   ) {
     super();
-    // this.addClass('jp-TaskList-header');
+    this.addClass('jp-TaskList-header');
   }
 
   render(): JSX.Element {
     return (
+      <div className="jp-TaskList-header">
         <FilterBox
           placeholder={this.trans.__('Search tasks...')}
-          updateFilter={(filterFn, query) => {
-            if (query !== undefined) {
-              //onSearch(query);
-            }
-          }}
-          useFuzzyFilter={true}
-          inputRef={this.searchInputRef}
+          updateFilter={() => {}}
+          useFuzzyFilter={false}
+          caseSensitive={false}
           disabled={false}
         />
+      </div>
     );
   }
 }
@@ -75,11 +73,28 @@ export class TaskListPanel extends SidePanel {
     // Add header with search
     this.header.addWidget(new TaskListHeader(this.trans, this._searchInputRef));
 
-    // Add task list panel with toolbar
-    const taskListPanel = new PanelWithToolbar();
-    taskListPanel.addClass('jp-TaskList-section');
-    taskListPanel.title.label = this.trans.__('Tasks');
+    // Add Backlog panel
+    const backlogPanel = new PanelWithToolbar();
+    backlogPanel.addClass('jp-TaskList-section');
+    backlogPanel.title.label = this.trans.__('Backlog');
+    backlogPanel.addWidget(new TaskList(this.trans));
+    this.addWidget(backlogPanel);
 
+    // Add Done panel
+    const donePanel = new PanelWithToolbar();
+    donePanel.addClass('jp-TaskList-section');
+    donePanel.title.label = this.trans.__('Done');
+    donePanel.addWidget(new TaskList(this.trans));
+    this.addWidget(donePanel);
+
+    // Add Recycle panel
+    const recyclePanel = new PanelWithToolbar();
+    recyclePanel.addClass('jp-TaskList-section');
+    recyclePanel.title.label = this.trans.__('Recycle');
+    recyclePanel.addWidget(new TaskList(this.trans));
+    this.addWidget(recyclePanel);
+
+    /* 不要删除，保留参考
     // Add refresh button to toolbar
     taskListPanel.toolbar.addItem(
       'refresh',
@@ -92,11 +107,7 @@ export class TaskListPanel extends SidePanel {
         tooltip: this.trans.__('Refresh task list')
       })
     );
-
-    // Add task list widget
-    taskListPanel.addWidget(new TaskList(this.trans));
-
-    this.addWidget(taskListPanel);
+    */
   }
 
   private readonly _searchInputRef: React.RefObject<HTMLInputElement>;

@@ -13,13 +13,21 @@
 }
 
 .jp-TaskList-section {
-  flex: 1;
   background: var(--jp-layout-color1);
-  overflow: auto;
+  margin-bottom: 8px;
+}
+
+.jp-TaskList-section .lm-AccordionPanel-title {
+  padding: 4px 8px;
+  font-weight: 600;
+  border-bottom: var(--jp-border-width) solid var(--jp-border-color2);
+  background: var(--jp-layout-color2);
 }
 
 .jp-TaskList-content {
   padding: 8px;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .jp-TaskList-list {
