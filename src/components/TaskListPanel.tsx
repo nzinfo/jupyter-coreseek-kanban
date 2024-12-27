@@ -18,22 +18,22 @@ class TaskListHeader extends ReactWidget {
     protected searchInputRef: React.RefObject<HTMLInputElement>
   ) {
     super();
-    this.addClass('jp-TaskList-header');
+    // this.addClass('jp-TaskList-header');
   }
 
   render(): JSX.Element {
     return (
-      <div className="jp-TaskList-header">
         <FilterBox
           placeholder={this.trans.__('Search tasks...')}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            if (this.searchInputRef.current) {
-              this.searchInputRef.current.value = e.target.value;
+          updateFilter={(filterFn, query) => {
+            if (query !== undefined) {
+              //onSearch(query);
             }
           }}
+          useFuzzyFilter={true}
+          inputRef={this.searchInputRef}
           disabled={false}
         />
-      </div>
     );
   }
 }
