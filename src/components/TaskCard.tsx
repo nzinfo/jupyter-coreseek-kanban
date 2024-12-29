@@ -1,5 +1,4 @@
 import { Widget } from '@lumino/widgets';
-// import { addIcon } from '@jupyterlab/ui-components';
 
 interface ITaskCardOptions {
   title: string;
@@ -14,18 +13,16 @@ interface ITaskCardOptions {
   };
 }
 
-class SimpleTag extends Widget {
-  constructor(tag: string, color: string) {
+class CellTagComponent extends Widget {
+  constructor(name: string) {
     super();
     this.addClass('jp-CellTag');
-    this.node.textContent = tag;
-    this.node.style.backgroundColor = color;
-    this.node.style.color = 'white'; // 确保文字颜色为白色
-    this.node.style.padding = '0 8px';
-    this.node.style.borderRadius = '3px';
-    this.node.style.display = 'inline-block';
-    this.node.style.height = '20px';
-    this.node.style.lineHeight = '20px';
+    
+    const tagName = document.createElement('span');
+    tagName.className = 'jp-CellTag-label';
+    tagName.textContent = name;
+    
+    this.node.appendChild(tagName);
   }
 }
 
@@ -59,7 +56,7 @@ export class TaskCard extends Widget {
     tagsContainer.className = 'jp-CellTags';
     
     options.tags.forEach(tag => {
-      const tagWidget = new SimpleTag(tag.name, tag.color);
+      const tagWidget = new CellTagComponent(tag.name);
       tagsContainer.appendChild(tagWidget.node);
     });
     

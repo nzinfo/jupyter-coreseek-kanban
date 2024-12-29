@@ -32,17 +32,27 @@
   line-height: 1.4;
 }
 
-/* 使用 JupyterLab 的 CellTags 样式 */
-.jp-TaskCard .jp-CellTags {
+.jp-CellTags {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   margin-top: 8px;
 }
 
-/* 如果需要覆盖一些 CellTag 的默认样式 */
-.jp-TaskCard .jp-CellTag {
+.jp-CellTag {
+  display: inline-flex;
+  align-items: center;
   height: 20px;
+  line-height: 20px;
   padding: 0 8px;
+  border-radius: 10px;
   font-size: 11px;
+  background-color: var(--jp-layout-color3);
+  color: var(--jp-ui-font-color1);
+  cursor: default;
+  user-select: none;
+}
+
+.jp-CellTag-label {
+  padding: 0 4px;
 } 

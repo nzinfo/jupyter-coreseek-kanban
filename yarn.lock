@@ -1606,6 +1606,7 @@ __metadata:
     "@jupyterlab/apputils": ^4.0.0
     "@jupyterlab/builder": ^4.0.0
     "@jupyterlab/celltags": ^3.6.8
+    "@jupyterlab/celltags-extension": ^4.3.4
     "@jupyterlab/codeeditor": ^4.0.0
     "@jupyterlab/docregistry": ^4.0.0
     "@jupyterlab/filebrowser": ^4.0.0
@@ -2415,6 +2416,21 @@ __metadata:
     "@lumino/widgets": ^2.5.0
     react: ^18.2.0
   checksum: 7c0d9d1b48b9c7139ed9adef059b6f03cd9e62a30e8fdca3224044382facb145e0d3edec64d57818860d0e733e9defea89084bd4e83015cf5683f2711f54ebe5
+  languageName: node
+  linkType: hard
+
+"@jupyterlab/celltags-extension@npm:^4.3.4":
+  version: 4.3.4
+  resolution: "@jupyterlab/celltags-extension@npm:4.3.4"
+  dependencies:
+    "@jupyterlab/application": ^4.3.4
+    "@jupyterlab/notebook": ^4.3.4
+    "@jupyterlab/translation": ^4.3.4
+    "@jupyterlab/ui-components": ^4.3.4
+    "@lumino/algorithm": ^2.0.2
+    "@rjsf/utils": ^5.13.4
+    react: ^18.2.0
+  checksum: 2b59ccdc091e87bc5b1add64152dd2a16a514477479e37d5f630e8d1e16df55c1ed33d15e580121b0088e49cc022fc81277f5f1ed2d81eda2463dbb56e822df6
   languageName: node
   linkType: hard
 
