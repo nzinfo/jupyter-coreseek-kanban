@@ -1,6 +1,5 @@
 import { Widget } from '@lumino/widgets';
-import { Drag } from '@lumino/dragdrop';
-import { MimeData } from '@lumino/coreutils';
+import { DragDropManager } from './dragdrop';
 
 interface ITaskCardOptions {
   title: string;
@@ -107,30 +106,13 @@ export class TaskCard extends Widget {
 
   private handleDragStart(event: DragEvent): void {
     event.stopPropagation();
-    const dragImage = this.node.cloneNode(true) as HTMLElement;
-    dragImage.style.position = 'absolute';
-    dragImage.style.top = '-1000px';
-    document.body.appendChild(dragImage);
-
-    event.dataTransfer?.setDragImage(dragImage, 0, 0);
-    setTimeout(() => document.body.removeChild(dragImage), 0);
-
-    const mimeData = new MimeData();
-    mimeData.setData('application/x-taskcard', true);
-
-    const drag = new Drag({
-      mimeData,
-      source: this
-    });
-    drag.start(event.clientX, event.clientY).then(() => {
-      if (event.dataTransfer) {
-        event.dataTransfer.setDragImage(dragImage, 0, 0);
-      }
-    });
+    event.dataTransfer?.setData('application/x-taskcard', 'true');
+    DragDropManager.dragSource = this;
+    event.dataTransfer!.effectAllowed = 'move';
   }
 
   private handleDragEnd(event: DragEvent): void {
     event.stopPropagation();
-    this.removeClass('jp-mod-dragging');
+    DragDropManager.dragSource = null;
   }
 } 

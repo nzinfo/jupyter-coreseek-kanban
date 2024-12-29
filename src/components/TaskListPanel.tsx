@@ -7,8 +7,9 @@ import {
   // ToolbarButton
 } from '@jupyterlab/ui-components';
 import { Panel } from '@lumino/widgets';
-import { Drag } from '@lumino/dragdrop';
+// import { Drag } from '@lumino/dragdrop';
 import { TaskCard } from './TaskCard';
+import { DragDropManager } from './dragdrop';
 
 /**
  * Task column component showing tasks in a specific status
@@ -19,10 +20,10 @@ export class TaskColumn extends Panel {
     this.addClass('jp-TaskColumn');
 
     // 启用拖放
-    this.node.addEventListener('lm-dragenter', this);
-    this.node.addEventListener('lm-dragleave', this);
-    this.node.addEventListener('lm-dragover', this);
-    this.node.addEventListener('lm-drop', this);
+    this.node.addEventListener('dragenter', this);
+    this.node.addEventListener('dragleave', this);
+    this.node.addEventListener('dragover', this);
+    this.node.addEventListener('drop', this);
 
     // 示例数据
     const tasks = [
@@ -52,51 +53,53 @@ export class TaskColumn extends Panel {
    */
   handleEvent(event: Event): void {
     switch (event.type) {
-      case 'lm-dragenter':
-        this.handleDragEnter(event as Drag.Event);
+      case 'dragenter':
+        this.handleDragEnter(event as DragEvent);
         break;
-      case 'lm-dragleave':
-        this.handleDragLeave(event as Drag.Event);
+      case 'dragleave':
+        this.handleDragLeave(event as DragEvent);
         break;
-      case 'lm-dragover':
-        this.handleDragOver(event as Drag.Event);
+      case 'dragover':
+        this.handleDragOver(event as DragEvent);
         break;
-      case 'lm-drop':
-        this.handleDrop(event as Drag.Event);
+      case 'drop':
+        this.handleDrop(event as DragEvent);
         break;
     }
   }
 
-  private handleDragEnter(event: Drag.Event): void {
+  private handleDragEnter(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
     this.addClass('jp-mod-dropTarget');
   }
 
-  private handleDragLeave(event: Drag.Event): void {
+  private handleDragLeave(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
     this.removeClass('jp-mod-dropTarget');
   }
 
-  private handleDragOver(event: Drag.Event): void {
+  private handleDragOver(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    event.dropAction = 'move';
   }
 
-  private handleDrop(event: Drag.Event): void {
+  private handleDrop(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
     this.removeClass('jp-mod-dropTarget');
 
-    if (event.source instanceof TaskCard) {
-      const source = event.source;
+    const dragData = event.dataTransfer?.getData('application/x-taskcard');
+    if (dragData && DragDropManager.dragSource instanceof TaskCard) {
+      const source = DragDropManager.dragSource;
       source.detach();
       this.addWidget(source);
+      DragDropManager.dragSource = null;
     }
   }
 }
+
 
 /**
  * The main panel for displaying tasks
