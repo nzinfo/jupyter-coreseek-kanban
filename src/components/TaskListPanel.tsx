@@ -1,31 +1,45 @@
-import React from 'react';
+// import React from 'react';
 import { ITranslator, TranslationBundle } from '@jupyterlab/translation';
 import {
   PanelWithToolbar,
-  ReactWidget,
+  // ReactWidget,
   // refreshIcon,
   SidePanel,
   // ToolbarButton
 } from '@jupyterlab/ui-components';
+import { Panel } from '@lumino/widgets';
+import { TaskCard } from './TaskCard';
 
 /**
  * Task list component showing all tasks
  */
-class TaskList extends ReactWidget {
-  constructor(protected trans: TranslationBundle) {
+export class TaskList extends Panel {
+  constructor(trans: TranslationBundle) {
     super();
-  }
+    this.addClass('jp-TaskList');
 
-  render(): JSX.Element {
-    return (
-      <div className="jp-TaskList-content">
-        <ul className="jp-TaskList-list">
-          {/* This will be populated with actual tasks */}
-          <li className="jp-TaskList-item">Sample Task 1</li>
-          <li className="jp-TaskList-item">Sample Task 2</li>
-        </ul>
-      </div>
-    );
+    // 示例数据
+    const tasks = [
+      {
+        title: '实现看板功能',
+        summary: '在 Jupyter 中实现类似 Trello 的看板功能',
+        tags: [
+          { name: '开发中', color: '#61BD4F' },
+          { name: '前端', color: '#FF78CB' }
+        ],
+        assignee: {
+          name: '张三',
+          avatarUrl: 'path/to/avatar.png'
+        }
+      }
+      // ... 更多任务
+    ];
+
+    // 添加任务卡片
+    tasks.forEach(task => {
+      const taskCard = new TaskCard(task);
+      this.addWidget(taskCard);
+    });
   }
 }
 

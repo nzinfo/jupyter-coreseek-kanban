@@ -60,6 +60,7 @@
         "@jupyter/ydoc": "^1.0.0",
         "@jupyterlab/application": "^4.0.0",
         "@jupyterlab/apputils": "^4.0.0",
+        "@jupyterlab/celltags": "^3.6.8",
         "@jupyterlab/codeeditor": "^4.0.0",
         "@jupyterlab/docregistry": "^4.0.0",
         "@jupyterlab/filebrowser": "^4.0.0",

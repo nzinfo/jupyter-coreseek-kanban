@@ -1,0 +1,48 @@
+.jp-TaskCard {
+  padding: 12px;
+  margin: 0 4px;
+  background-color: var(--jp-layout-color1);
+  border-bottom: 1px solid var(--jp-border-color1);
+}
+
+.jp-TaskCard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.jp-TaskCard-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--jp-ui-font-color0);
+}
+
+.jp-TaskCard-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.jp-TaskCard-summary {
+  font-size: 12px;
+  color: var(--jp-ui-font-color2);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+/* 使用 JupyterLab 的 CellTags 样式 */
+.jp-TaskCard .jp-CellTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+/* 如果需要覆盖一些 CellTag 的默认样式 */
+.jp-TaskCard .jp-CellTag {
+  height: 20px;
+  padding: 0 8px;
+  font-size: 11px;
+} 

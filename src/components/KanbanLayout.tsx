@@ -32,7 +32,7 @@ export class KanbanLayout extends SplitPanel {
     this.addWidget(tasklistWidget);
     
     // Set the relative sizes of the panels (30% left, 70% right)
-    this.setRelativeSizes([0.8, 0.2]);
+    this.setRelativeSizes([0.9, 0.1]);
     
     this.id = 'jp-kanban-layout';
     this.addClass('jp-KanbanLayout');
