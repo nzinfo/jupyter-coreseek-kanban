@@ -15,7 +15,7 @@ import {
   caretRightIcon
 } from '@jupyterlab/ui-components';
 import { TaskColumn } from './TaskListPanel';
-import { Widget, Panel } from '@lumino/widgets';
+import { Panel } from '@lumino/widgets';
 
 /**
  * Task board header component
@@ -76,22 +76,76 @@ class TaskBoardHeader extends ReactWidget {
 /**
  * Task board content component
  */
-class TaskBoardContent extends ReactWidget {
+class TaskBoardContent extends Panel {
   constructor(protected trans: TranslationBundle) {
     super();
+    this.addClass('jp-TaskBoard-content');
     this._columns = new Map();
-  }
+    
+    // Enable drag and drop
+    this.node.addEventListener('dragenter', this);
+    this.node.addEventListener('dragleave', this);
+    this.node.addEventListener('dragover', this);
+    this.node.addEventListener('drop', this);
 
-  componentDidMount(): void {
+    // Create columns
     const columns = ['Todo', 'Doing', 'Review', 'Done'];
     columns.forEach(columnName => {
       const column = new TaskColumn(this.trans);
+      column.addClass('jp-TaskBoard-column');
       this._columns.set(columnName, column);
+      this.addWidget(column);
     });
-    this.update();
   }
 
-  componentWillUnmount(): void {
+  /**
+   * Handle the DOM events for the widget.
+   */
+  handleEvent(event: Event): void {
+    switch (event.type) {
+      case 'dragenter':
+        this.handleDragEnter(event as DragEvent);
+        break;
+      case 'dragleave':
+        this.handleDragLeave(event as DragEvent);
+        break;
+      case 'dragover':
+        this.handleDragOver(event as DragEvent);
+        break;
+      case 'drop':
+        this.handleDrop(event as DragEvent);
+        break;
+    }
+  }
+
+  private handleDragEnter(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.addClass('jp-mod-dropTarget');
+  }
+
+  private handleDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const relatedTarget = event.relatedTarget as HTMLElement;
+    if (!this.node.contains(relatedTarget)) {
+      this.removeClass('jp-mod-dropTarget');
+    }
+  }
+
+  private handleDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    event.dataTransfer!.dropEffect = 'move';
+  }
+
+  private handleDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.removeClass('jp-mod-dropTarget');
+  }
+
+  dispose(): void {
     this._columns.forEach(column => {
       if (column.parent) {
         Panel.detach(column);
@@ -99,38 +153,7 @@ class TaskBoardContent extends ReactWidget {
       column.dispose();
     });
     this._columns.clear();
-  }
-
-  render(): JSX.Element {
-    const columns = ['Todo', 'Doing', 'Review', 'Done'];
-    
-    return (
-      <div className="jp-TaskBoard-content">
-        <div className="jp-TaskBoard-columns">
-          {columns.map(columnName => (
-            <div key={columnName} className="jp-TaskBoard-column">
-              <div className="jp-TaskBoard-columnHeader">
-                <h3>{this.trans.__(columnName)}</h3>
-              </div>
-              <div 
-                className="jp-TaskBoard-columnContent"
-                ref={node => {
-                  if (node) {
-                    const column = this._columns.get(columnName);
-                    if (column) {
-                      if (column.parent) {
-                        Panel.detach(column);
-                      }
-                      Widget.attach(column, node);
-                    }
-                  }
-                }}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    super.dispose();
   }
 
   private _columns: Map<string, TaskColumn>;
