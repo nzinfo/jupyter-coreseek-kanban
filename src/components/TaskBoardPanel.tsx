@@ -14,6 +14,8 @@ import {
   caretLeftIcon,
   caretRightIcon
 } from '@jupyterlab/ui-components';
+import { TaskColumn } from './TaskListPanel';
+import { Widget, Panel } from '@lumino/widgets';
 
 /**
  * Task board header component
@@ -77,48 +79,61 @@ class TaskBoardHeader extends ReactWidget {
 class TaskBoardContent extends ReactWidget {
   constructor(protected trans: TranslationBundle) {
     super();
+    this._columns = new Map();
+  }
+
+  componentDidMount(): void {
+    const columns = ['Todo', 'Doing', 'Review', 'Done'];
+    columns.forEach(columnName => {
+      const column = new TaskColumn(this.trans);
+      this._columns.set(columnName, column);
+    });
+    this.update();
+  }
+
+  componentWillUnmount(): void {
+    this._columns.forEach(column => {
+      if (column.parent) {
+        Panel.detach(column);
+      }
+      column.dispose();
+    });
+    this._columns.clear();
   }
 
   render(): JSX.Element {
+    const columns = ['Todo', 'Doing', 'Review', 'Done'];
+    
     return (
       <div className="jp-TaskBoard-content">
         <div className="jp-TaskBoard-columns">
-          <div className="jp-TaskBoard-column">
-            <div className="jp-TaskBoard-columnHeader">
-              <h3>{this.trans.__('Todo')}</h3>
+          {columns.map(columnName => (
+            <div key={columnName} className="jp-TaskBoard-column">
+              <div className="jp-TaskBoard-columnHeader">
+                <h3>{this.trans.__(columnName)}</h3>
+              </div>
+              <div 
+                className="jp-TaskBoard-columnContent"
+                ref={node => {
+                  if (node) {
+                    const column = this._columns.get(columnName);
+                    if (column) {
+                      if (column.parent) {
+                        Panel.detach(column);
+                      }
+                      Widget.attach(column, node);
+                    }
+                  }
+                }}
+              />
             </div>
-            <div className="jp-TaskBoard-columnContent">
-              {/* Todo tasks will go here */}
-            </div>
-          </div>
-          <div className="jp-TaskBoard-column">
-            <div className="jp-TaskBoard-columnHeader">
-              <h3>{this.trans.__('Doing')}</h3>
-            </div>
-            <div className="jp-TaskBoard-columnContent">
-              {/* Doing tasks will go here */}
-            </div>
-          </div>
-          <div className="jp-TaskBoard-column">
-            <div className="jp-TaskBoard-columnHeader">
-              <h3>{this.trans.__('Review')}</h3>
-            </div>
-            <div className="jp-TaskBoard-columnContent">
-              {/* Review tasks will go here */}
-            </div>
-          </div>
-          <div className="jp-TaskBoard-column">
-            <div className="jp-TaskBoard-columnHeader">
-              <h3>{this.trans.__('Done')}</h3>
-            </div>
-            <div className="jp-TaskBoard-columnContent">
-              {/* Done tasks will go here */}
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     );
   }
+
+  private _columns: Map<string, TaskColumn>;
 }
 
 /**
