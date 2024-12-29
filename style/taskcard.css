@@ -63,4 +63,21 @@
 
 .jp-CellTag-label {
   padding: 0 4px;
+}
+
+.jp-TaskColumn {
+  min-height: 100px;
+  padding: 8px;
+}
+
+.jp-TaskColumn.jp-mod-dropTarget {
+  background-color: var(--jp-layout-color2);
+}
+
+.jp-TaskCard {
+  cursor: move;
+}
+
+.jp-TaskCard.jp-mod-dragging {
+  opacity: 0.5;
 } 

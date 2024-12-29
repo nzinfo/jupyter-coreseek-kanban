@@ -1,4 +1,3 @@
-// import React from 'react';
 import { ITranslator, TranslationBundle } from '@jupyterlab/translation';
 import {
   PanelWithToolbar,
@@ -8,15 +7,22 @@ import {
   // ToolbarButton
 } from '@jupyterlab/ui-components';
 import { Panel } from '@lumino/widgets';
+import { Drag } from '@lumino/dragdrop';
 import { TaskCard } from './TaskCard';
 
 /**
- * Task list component showing all tasks
+ * Task column component showing tasks in a specific status
  */
-export class TaskList extends Panel {
+export class TaskColumn extends Panel {
   constructor(trans: TranslationBundle) {
     super();
-    this.addClass('jp-TaskList');
+    this.addClass('jp-TaskColumn');
+
+    // 启用拖放
+    this.node.addEventListener('lm-dragenter', this);
+    this.node.addEventListener('lm-dragleave', this);
+    this.node.addEventListener('lm-dragover', this);
+    this.node.addEventListener('lm-drop', this);
 
     // 示例数据
     const tasks = [
@@ -29,10 +35,9 @@ export class TaskList extends Panel {
         ],
         assignee: {
           name: '张',
-          avatarUrl: 'path/to/avatar.png'
+          avatarUrl: ''
         }
       }
-      // ... 更多任务
     ];
 
     // 添加任务卡片
@@ -40,6 +45,56 @@ export class TaskList extends Panel {
       const taskCard = new TaskCard(task);
       this.addWidget(taskCard);
     });
+  }
+
+  /**
+   * Handle the DOM events for the widget.
+   */
+  handleEvent(event: Event): void {
+    switch (event.type) {
+      case 'lm-dragenter':
+        this.handleDragEnter(event as Drag.Event);
+        break;
+      case 'lm-dragleave':
+        this.handleDragLeave(event as Drag.Event);
+        break;
+      case 'lm-dragover':
+        this.handleDragOver(event as Drag.Event);
+        break;
+      case 'lm-drop':
+        this.handleDrop(event as Drag.Event);
+        break;
+    }
+  }
+
+  private handleDragEnter(event: Drag.Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.addClass('jp-mod-dropTarget');
+  }
+
+  private handleDragLeave(event: Drag.Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.removeClass('jp-mod-dropTarget');
+  }
+
+  private handleDragOver(event: Drag.Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    event.dropAction = 'move';
+  }
+
+  private handleDrop(event: Drag.Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.removeClass('jp-mod-dropTarget');
+
+    if (event.source instanceof TaskCard) {
+      const source = event.source;
+      source.detach();
+      this.addWidget(source);
+    }
   }
 }
 
@@ -51,48 +106,22 @@ export class TaskListPanel extends SidePanel {
     const { translator } = options;
     super({ translator });
     
-    // this._searchInputRef = React.createRef<HTMLInputElement>();
     this.addClass('jp-TaskList-panel');
-
     this.trans = translator.load('jupyter-coreseek-kanban');
 
     // Add Backlog panel
     const backlogPanel = new PanelWithToolbar();
     backlogPanel.addClass('jp-TaskList-section');
     backlogPanel.title.label = this.trans.__('Backlog');
-    backlogPanel.addWidget(new TaskList(this.trans));
+    backlogPanel.addWidget(new TaskColumn(this.trans));
     this.addWidget(backlogPanel);
 
     // Add Done panel
     const donePanel = new PanelWithToolbar();
     donePanel.addClass('jp-TaskList-section');
     donePanel.title.label = this.trans.__('Done');
-    donePanel.addWidget(new TaskList(this.trans));
+    donePanel.addWidget(new TaskColumn(this.trans));
     this.addWidget(donePanel);
-
-    // Add Recycle panel
-    /* // 暂不删除，单独的回收站 还是直接在 item 中删除， 待考虑
-    const recyclePanel = new PanelWithToolbar();
-    recyclePanel.addClass('jp-TaskList-section');
-    recyclePanel.title.label = this.trans.__('Recycle');
-    recyclePanel.addWidget(new TaskList(this.trans));
-    this.addWidget(recyclePanel);
-    */
-
-    /* 不要删除，保留参考
-    // Add refresh button to toolbar
-    taskListPanel.toolbar.addItem(
-      'refresh',
-      new ToolbarButton({
-        icon: refreshIcon,
-        onClick: () => {
-          // TODO: Implement refresh functionality
-          console.log('Refreshing task list...');
-        },
-        tooltip: this.trans.__('Refresh task list')
-      })
-    );
-    */
   }
 
   protected trans: TranslationBundle;

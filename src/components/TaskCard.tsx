@@ -1,4 +1,6 @@
 import { Widget } from '@lumino/widgets';
+import { Drag } from '@lumino/dragdrop';
+import { MimeData } from '@lumino/coreutils';
 
 interface ITaskCardOptions {
   title: string;
@@ -30,6 +32,11 @@ export class TaskCard extends Widget {
   constructor(options: ITaskCardOptions) {
     super();
     this.addClass('jp-TaskCard');
+    
+    // 启用拖动
+    this.node.draggable = true;
+    this.node.addEventListener('dragstart', this);
+    this.node.addEventListener('dragend', this);
     
     // 创建卡片内容
     const header = document.createElement('div');
@@ -73,5 +80,57 @@ export class TaskCard extends Widget {
     this.node.appendChild(header);
     this.node.appendChild(summary);
     this.node.appendChild(tagsContainer);
+  }
+
+  /**
+   * 从父组件中分离此组件
+   */
+  detach(): void {
+    if (this.parent) {
+      this.parent.layout?.removeWidget(this);
+    }
+  }
+
+  /**
+   * Handle the DOM events for the widget.
+   */
+  handleEvent(event: Event): void {
+    switch (event.type) {
+      case 'dragstart':
+        this.handleDragStart(event as DragEvent);
+        break;
+      case 'dragend':
+        this.handleDragEnd(event as DragEvent);
+        break;
+    }
+  }
+
+  private handleDragStart(event: DragEvent): void {
+    event.stopPropagation();
+    const dragImage = this.node.cloneNode(true) as HTMLElement;
+    dragImage.style.position = 'absolute';
+    dragImage.style.top = '-1000px';
+    document.body.appendChild(dragImage);
+
+    event.dataTransfer?.setDragImage(dragImage, 0, 0);
+    setTimeout(() => document.body.removeChild(dragImage), 0);
+
+    const mimeData = new MimeData();
+    mimeData.setData('application/x-taskcard', true);
+
+    const drag = new Drag({
+      mimeData,
+      source: this
+    });
+    drag.start(event.clientX, event.clientY).then(() => {
+      if (event.dataTransfer) {
+        event.dataTransfer.setDragImage(dragImage, 0, 0);
+      }
+    });
+  }
+
+  private handleDragEnd(event: DragEvent): void {
+    event.stopPropagation();
+    this.removeClass('jp-mod-dragging');
   }
 } 
