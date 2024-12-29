@@ -39,10 +39,19 @@ export class TaskCard extends Widget {
     title.className = 'jp-TaskCard-title';
     title.textContent = options.title;
     
-    const avatar = document.createElement('img');
+    let avatar: HTMLElement;
+    if (options.assignee.avatarUrl) {
+      // 如果有头像URL，使用img标签
+      const imgAvatar = document.createElement('img');
+      imgAvatar.src = options.assignee.avatarUrl;
+      imgAvatar.alt = options.assignee.name;
+      avatar = imgAvatar;
+    } else {
+      // 如果没有头像URL，创建一个显示首字母的div
+      avatar = document.createElement('div');
+      avatar.textContent = options.assignee.name.charAt(0);
+    }
     avatar.className = 'jp-TaskCard-avatar';
-    avatar.src = options.assignee.avatarUrl;
-    avatar.alt = options.assignee.name;
     avatar.title = options.assignee.name;
     
     header.appendChild(title);

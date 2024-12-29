@@ -28,7 +28,7 @@ export class TaskList extends Panel {
           { name: '前端', color: '#FF78CB' }
         ],
         assignee: {
-          name: '张三',
+          name: '张',
           avatarUrl: 'path/to/avatar.png'
         }
       }
