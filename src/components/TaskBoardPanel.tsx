@@ -80,83 +80,35 @@ class TaskBoardContent extends Panel {
   constructor(protected trans: TranslationBundle) {
     super();
     this.addClass('jp-TaskBoard-content');
-    this._columns = new Map();
     
-    // Enable drag and drop
-    this.node.addEventListener('dragenter', this);
-    this.node.addEventListener('dragleave', this);
-    this.node.addEventListener('dragover', this);
-    this.node.addEventListener('drop', this);
+    // Create columns container
+    const columnsContainer = document.createElement('div');
+    columnsContainer.className = 'jp-TaskBoard-columns';
+    this.node.appendChild(columnsContainer);
 
     // Create columns
     const columns = ['Todo', 'Doing', 'Review', 'Done'];
     columns.forEach(columnName => {
+      // Create column container
+      const columnContainer = document.createElement('div');
+      columnContainer.className = 'jp-TaskBoard-column';
+
+      // Create column header
+      const header = document.createElement('div');
+      header.className = 'jp-TaskBoard-columnHeader';
+      const title = document.createElement('h3');
+      title.textContent = this.trans.__(columnName);
+      header.appendChild(title);
+      columnContainer.appendChild(header);
+
+      // Create TaskColumn
       const column = new TaskColumn(this.trans);
-      column.addClass('jp-TaskBoard-column');
-      this._columns.set(columnName, column);
-      this.addWidget(column);
+      columnContainer.appendChild(column.node);
+
+      // Add column to container
+      columnsContainer.appendChild(columnContainer);
     });
   }
-
-  /**
-   * Handle the DOM events for the widget.
-   */
-  handleEvent(event: Event): void {
-    switch (event.type) {
-      case 'dragenter':
-        this.handleDragEnter(event as DragEvent);
-        break;
-      case 'dragleave':
-        this.handleDragLeave(event as DragEvent);
-        break;
-      case 'dragover':
-        this.handleDragOver(event as DragEvent);
-        break;
-      case 'drop':
-        this.handleDrop(event as DragEvent);
-        break;
-    }
-  }
-
-  private handleDragEnter(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.addClass('jp-mod-dropTarget');
-  }
-
-  private handleDragLeave(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    const relatedTarget = event.relatedTarget as HTMLElement;
-    if (!this.node.contains(relatedTarget)) {
-      this.removeClass('jp-mod-dropTarget');
-    }
-  }
-
-  private handleDragOver(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    event.dataTransfer!.dropEffect = 'move';
-  }
-
-  private handleDrop(event: DragEvent): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.removeClass('jp-mod-dropTarget');
-  }
-
-  dispose(): void {
-    this._columns.forEach(column => {
-      if (column.parent) {
-        Panel.detach(column);
-      }
-      column.dispose();
-    });
-    this._columns.clear();
-    super.dispose();
-  }
-
-  private _columns: Map<string, TaskColumn>;
 }
 
 /**
