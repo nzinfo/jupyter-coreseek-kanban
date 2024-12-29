@@ -58,3 +58,36 @@
 .jp-TaskList-section .jp-Toolbar-item {
   margin-right: 4px;
 }
+
+/* Drop indicator styles */
+.jp-TaskColumn-dropIndicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--jp-brand-color1);
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.jp-TaskColumn-dropIndicator::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 8px;
+  height: 8px;
+  background-color: var(--jp-brand-color1);
+  border-radius: 50%;
+}
+
+.jp-TaskColumn {
+  position: relative;
+  min-height: 100px;
+  padding: 8px;
+  transition: background-color 0.2s;
+}
+
+.jp-TaskColumn.jp-mod-dropTarget {
+  background-color: rgba(62, 184, 255, 0.1);
+}
