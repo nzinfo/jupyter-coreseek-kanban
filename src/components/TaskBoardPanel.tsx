@@ -16,6 +16,7 @@ import {
 } from '@jupyterlab/ui-components';
 import { TaskColumn } from './TaskListPanel';
 import { Panel } from '@lumino/widgets';
+import { KanbanLayout } from './KanbanLayout';
 
 /**
  * Task board header component
@@ -125,7 +126,10 @@ export class TaskBoardPanel extends SidePanel {
     // Add header
     const header = new TaskBoardHeader(this.trans);
     header.setTasklistToggleCallback((visible) => {
-      console.log('Tasklist visibility toggled:', visible);
+      const parent = this.parent;
+      if (parent && parent instanceof KanbanLayout) {
+        parent.toggleTaskList(visible);
+      }
     });
     this.header.addWidget(header);
 
