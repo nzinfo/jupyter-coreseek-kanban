@@ -16,14 +16,14 @@ interface ICategory {
 
 interface IKanbanOptionsPanelProps {
   trans: TranslationBundle;
-  onClose: () => void;
+  // onClose: () => void;
 }
 
 export class KanbanOptionsPanel extends ReactWidget {
   constructor(options: IKanbanOptionsPanelProps) {
     super();
     this._trans = options.trans;
-    this._onClose = options.onClose;
+    //this._onClose = options.onClose;
     this.addClass('jp-KanbanOptions-panel');
 
     // Initialize with some default stages and categories
@@ -54,20 +54,7 @@ export class KanbanOptionsPanel extends ReactWidget {
     return (
       <div className="jp-KanbanOptions-container">
         <div className="jp-KanbanOptions-header">
-          <div className="jp-ToolbarButton jp-Toolbar-item">
-            <button 
-              className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-              onClick={this._onClose}
-              title={this._trans.__('Close')}
-            >
-              <closeIcon.react tag="span" className="jp-Icon" />
-            </button>
-          </div>
-        </div>
-        <div className="jp-KanbanOptions-content">
-          <div className="jp-KanbanOptions-stages">
-            <div className="jp-KanbanOptions-section-header">
-              <h3>{this._trans.__('Stages')}</h3>
+          <h3>{this._trans.__('Stages')}</h3>
               <div className="jp-ToolbarButton jp-Toolbar-item">
                 <button 
                   className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
@@ -77,6 +64,11 @@ export class KanbanOptionsPanel extends ReactWidget {
                   <addIcon.react tag="span" className="jp-Icon" />
                 </button>
               </div>
+        </div>
+        <div className="jp-KanbanOptions-content">
+          <div className="jp-KanbanOptions-stages">
+            <div className="jp-KanbanOptions-section-header">
+              
             </div>
             {this._stages.map((stage, index) => this._renderStage(stage, index))}
           </div>
@@ -304,5 +296,5 @@ export class KanbanOptionsPanel extends ReactWidget {
 
   private _stages: IStage[];
   private readonly _trans: TranslationBundle;
-  private readonly _onClose: () => void;
+  // private readonly _onClose: () => void;
 }

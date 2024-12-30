@@ -200,7 +200,7 @@ export class TaskListPanel extends SidePanel {
     optionsPanel.title.label = this.trans.__('Kanban Settings');
     this._optionsWidget = new KanbanOptionsPanel({
       trans: this.trans,
-      onClose: () => this._hideOptionsPanel()
+      // onClose: () => this._hideOptionsPanel()
     });
     optionsPanel.addWidget(this._optionsWidget);
     this._optionsPanel = optionsPanel;
