@@ -165,11 +165,12 @@ export class TaskBoardPanel extends SidePanel {
 
     // Set up collaboration awareness
     if (this._sharedModel.awareness) {
+      /*
       this._sharedModel.awareness.setLocalStateField('user', {
         name: 'User ' + Math.floor(Math.random() * 1000),
         color: '#' + Math.floor(Math.random()*16777215).toString(16)
       });
-
+      */
       // Listen to awareness changes
       this._sharedModel.awareness.on('change', () => {
         const states = Array.from(this._sharedModel.awareness!.getStates().values());

@@ -150,6 +150,10 @@ export class KanbanModelFactory extends TextModelFactory {
    * #### Notes
    * This is a read-only property.
    */
+  constructor(collaborative?: boolean) {
+    super(collaborative);
+  }
+
   get name(): string {
     return 'kanban_model';
   }
@@ -180,7 +184,7 @@ export class KanbanModelFactory extends TextModelFactory {
    *
    * @returns A new document model.
    */
-  createNew(options: DocumentRegistry.IModelOptions<any> = {}): DocumentRegistry.ICodeModel {
-    return new KanbanModel();
+  createNew(options: DocumentRegistry.IModelOptions<YFile> = {}): DocumentRegistry.ICodeModel {
+    return new KanbanModel(options);
   }
 }
