@@ -4,7 +4,8 @@ import {
   // ReactWidget,
   // refreshIcon,
   SidePanel,
-  // ToolbarButton
+  ToolbarButton,
+  addIcon
 } from '@jupyterlab/ui-components';
 import { Panel } from '@lumino/widgets';
 // import { Drag } from '@lumino/dragdrop';
@@ -195,6 +196,19 @@ export class TaskListPanel extends SidePanel {
     const backlogPanel = new PanelWithToolbar();
     backlogPanel.addClass('jp-TaskList-section');
     backlogPanel.title.label = this.trans.__('Backlog');
+    
+    // Add new task button to toolbar
+    backlogPanel.toolbar.addItem(
+      'newTask',
+      new ToolbarButton({
+        icon: addIcon,
+        onClick: () => {
+          console.log('Add new task clicked');
+        },
+        tooltip: this.trans.__('Add new task')
+      })
+    );
+    
     this._backlogColumn = new TaskColumn(this.trans, true); // 添加示例任务
     backlogPanel.addWidget(this._backlogColumn);
     this.addWidget(backlogPanel);
@@ -203,6 +217,19 @@ export class TaskListPanel extends SidePanel {
     const donePanel = new PanelWithToolbar();
     donePanel.addClass('jp-TaskList-section');
     donePanel.title.label = this.trans.__('Done');
+    
+    // Add remove all button to toolbar
+    donePanel.toolbar.addItem(
+      'removeAll',
+      new ToolbarButton({
+        className: 'jp-TaskList-removeAll',
+        label: this.trans.__('Delete All'),
+        onClick: () => {
+          console.log('Delete all tasks');
+        }
+      })
+    );
+    
     this._doneColumn = new TaskColumn(this.trans, false); // 不添加示例任务
     donePanel.addWidget(this._doneColumn);
     this.addWidget(donePanel);
