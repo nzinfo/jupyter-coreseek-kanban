@@ -1,2 +1,1 @@
-import './base.css';
-import './taskpanel.css';
+import './index.css';

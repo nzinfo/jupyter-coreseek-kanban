@@ -1,22 +1,10 @@
-import { ReactWidget } from '@jupyterlab/ui-components';
+// import { ReactWidget } from '@jupyterlab/ui-components';
 import { SplitPanel } from '@lumino/widgets';
 import { Message } from '@lumino/messaging';
 import { ITranslator, nullTranslator } from '@jupyterlab/translation';
-import React from 'react';
-import { TaskPanel } from './TaskPanel';
-
-
-/**
- * Right panel test component
- */
-const RightPanelTest: React.FC = () => {
-  return (
-    <div style={{ padding: '16px' }}>
-      <h2>Right Panel</h2>
-      <p>This is the right panel content</p>
-    </div>
-  );
-};
+// import React from 'react';
+import { TaskListPanel } from './TaskListPanel';
+import { TaskBoardPanel } from './TaskBoardPanel';
 
 /**
  * The main layout for the Kanban board.
@@ -31,23 +19,48 @@ export class KanbanLayout extends SplitPanel {
 
     this._translator = options.translator || nullTranslator;
     
-    // Create left panel widget (TaskPanel)
-    const leftWidget = new TaskPanel({ translator: this._translator });
-    leftWidget.addClass('jp-KanbanLayout-left');
+    // Create left panel widget
+    this._tasklistWidget = new TaskListPanel({ translator: this._translator });
+    this._tasklistWidget.addClass('jp-KanbanLayout-right');
     
     // Create right panel widget
-    const rightWidget = ReactWidget.create(<RightPanelTest />);
-    rightWidget.addClass('jp-KanbanLayout-right');
+    this._boardWidget = new TaskBoardPanel({ translator: this._translator });
+    this._boardWidget.addClass('jp-KanbanLayout-left');
     
     // Add widgets to the split panel
-    this.addWidget(leftWidget);
-    this.addWidget(rightWidget);
+    this.addWidget(this._boardWidget);
+    this.addWidget(this._tasklistWidget);
     
-    // Set the relative sizes of the panels (40% left, 60% right)
-    this.setRelativeSizes([0.4, 0.6]);
+    // Set the relative sizes of the panels (30% left, 70% right)
+    this.setRelativeSizes([0.9, 0.1]);
     
     this.id = 'jp-kanban-layout';
     this.addClass('jp-KanbanLayout');
+  }
+
+  /**
+   * Toggle the visibility of the task list panel
+   */
+  toggleTaskList(visible?: boolean): void {
+    if (visible === undefined) {
+      visible = !this._tasklistWidget.isVisible;
+    }
+    
+    this._tasklistWidget.setHidden(!visible);
+    
+    // Adjust the relative sizes
+    if (visible) {
+      this.setRelativeSizes([0.9, 0.1]);
+    } else {
+      this.setRelativeSizes([1, 0]);
+    }
+  }
+
+  /**
+   * Get the task board panel
+   */
+  get boardWidget(): TaskBoardPanel {
+    return this._boardWidget;
   }
 
   /**
@@ -66,6 +79,8 @@ export class KanbanLayout extends SplitPanel {
   }
 
   protected readonly _translator: ITranslator;
+  private _tasklistWidget: TaskListPanel;
+  private _boardWidget: TaskBoardPanel;
 }
 
 /**

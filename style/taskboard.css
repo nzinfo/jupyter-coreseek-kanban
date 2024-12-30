@@ -1,0 +1,113 @@
+/* Task Board Panel Styles */
+.jp-TaskBoard-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--jp-layout-color1);
+}
+
+.jp-TaskBoard-header {
+  padding: 4px 0px 4px 16px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(200px, 300px) 1fr auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.jp-TaskBoard-header h2 {
+  margin: 0;
+  font-size: var(--jp-ui-font-size2);
+  font-weight: 600;
+  color: var(--jp-ui-font-color0);
+  text-align: center;
+  white-space: nowrap;
+  justify-self: center;
+}
+
+/* Search box styles */
+.jp-TaskBoard-header .jp-FilterBox {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Header buttons container */
+.jp-TaskBoard-headerButtons {
+  display: flex;
+  gap: 4px;
+  padding-right: 8px;
+}
+
+/* Button styles */
+.jp-TaskBoard-headerButtons .jp-ToolbarButtonComponent {
+  margin: 0;
+}
+
+/* More options button styles */
+.jp-TaskBoard-header .jp-ToolbarButtonComponent {
+  padding-right: 8px;
+}
+
+.jp-TaskBoard-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--jp-layout-color1);
+  overflow: hidden;
+}
+
+/* Toolbar styles */
+.jp-TaskBoard-section .jp-Toolbar {
+  padding: 4px;
+  border-bottom: var(--jp-border-width) solid var(--jp-border-color2);
+  background: var(--jp-layout-color1);
+  display: flex;
+  align-items: center;
+}
+
+.jp-TaskBoard-section .jp-Toolbar-item {
+  margin-right: 4px;
+}
+
+.jp-TaskBoard-content {
+  flex: 1;
+  padding: 16px;
+  overflow: auto;
+}
+
+.jp-TaskBoard-columns {
+  display: flex;
+  height: 100%;
+  min-height: 400px;
+}
+
+.jp-TaskBoard-column {
+  flex: 1;
+  min-width: 250px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  border-left: var(--jp-border-width) solid var(--jp-border-color2);
+}
+
+.jp-TaskBoard-column:first-of-type {
+  border-left: none;
+}
+
+.jp-TaskBoard-columnHeader {
+  padding: 8px 16px;
+  border-bottom: var(--jp-border-width) solid var(--jp-border-color2);
+}
+
+.jp-TaskBoard-columnHeader h3 {
+  margin: 0;
+  font-size: var(--jp-ui-font-size1);
+  font-weight: 600;
+  color: var(--jp-ui-font-color0);
+}
+
+.jp-TaskBoard-columnContent {
+  flex: 1;
+  padding: 8px;
+  overflow-y: auto;
+}

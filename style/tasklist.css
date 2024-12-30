@@ -1,0 +1,93 @@
+/* Task List Panel Styles */
+.jp-TaskList-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 300px;
+  height: 100%;
+  background: var(--jp-layout-color1);
+}
+
+.jp-TaskList-header {
+  padding: 8px;
+  border-bottom: var(--jp-border-width) solid var(--jp-border-color2);
+}
+
+.jp-TaskList-section {
+  background: var(--jp-layout-color1);
+  margin-bottom: 8px;
+}
+
+.jp-TaskList-section .lm-AccordionPanel-title {
+  padding: 4px 8px;
+  font-weight: 600;
+  border-bottom: var(--jp-border-width) solid var(--jp-border-color2);
+  background: var(--jp-layout-color2);
+}
+
+.jp-TaskList-content {
+  padding: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.jp-TaskList-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.jp-TaskList-item {
+  padding: 8px;
+  margin-bottom: 4px;
+  background: var(--jp-layout-color2);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+.jp-TaskList-item:hover {
+  background: var(--jp-layout-color3);
+}
+
+/* Toolbar styles */
+.jp-TaskList-section .jp-Toolbar {
+  padding: 4px;
+  border-bottom: var(--jp-border-width) solid var(--jp-border-color2);
+}
+
+.jp-TaskList-section .jp-Toolbar-item {
+  margin-right: 4px;
+}
+
+/* Drop indicator styles */
+.jp-TaskColumn-dropIndicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--jp-brand-color1);
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.jp-TaskColumn-dropIndicator::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 8px;
+  height: 8px;
+  background-color: var(--jp-brand-color1);
+  border-radius: 50%;
+}
+
+.jp-TaskColumn {
+  position: relative;
+  min-height: 100px;
+  padding: 8px;
+  transition: background-color 0.2s;
+}
+
+.jp-TaskColumn.jp-mod-dropTarget {
+  background-color: rgba(62, 184, 255, 0.1);
+}
