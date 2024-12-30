@@ -6,6 +6,7 @@ import { IEditorServices } from '@jupyterlab/codeeditor';
 // import React from 'react';
 import { TaskListPanel } from './TaskListPanel';
 import { TaskBoardPanel } from './TaskBoardPanel';
+import { DocumentRegistry } from '@jupyterlab/docregistry';
 
 /**
  * The main layout for the Kanban board.
@@ -27,7 +28,8 @@ export class KanbanLayout extends SplitPanel {
     // Create right panel widget
     this._boardWidget = new TaskBoardPanel({ 
       translator: this._translator,
-      editorServices: options.editorServices
+      editorServices: options.editorServices,
+      model: options.model
     });
     this._boardWidget.addClass('jp-KanbanLayout-left');
     
@@ -99,6 +101,15 @@ export namespace KanbanLayout {
      * The application language translator.
      */
     translator?: ITranslator;
+
+    /**
+     * The editor services.
+     */
     editorServices: IEditorServices;
+
+    /**
+     * The document model.
+     */
+    model: DocumentRegistry.IModel;
   }
 }

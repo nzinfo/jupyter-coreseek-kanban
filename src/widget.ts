@@ -9,8 +9,8 @@ import {
   Signal 
 } from '@lumino/signaling';
 
-import { KanbanModel } from './model';
-import { YFile } from '@jupyter/ydoc';
+// import { KanbanModel } from './model';
+// import { YFile } from '@jupyter/ydoc';
 import { PathExt } from '@jupyterlab/coreutils';
 import { KanbanLayout } from './components/KanbanLayout';
 import { ITranslator, nullTranslator } from '@jupyterlab/translation';
@@ -20,18 +20,19 @@ import { IEditorServices } from '@jupyterlab/codeeditor';
  * A widget for Kanban board functionality
  */
 export class KanbanWidget extends DocumentWidget<KanbanLayout, DocumentRegistry.IModel> {
-  private _model: KanbanModel;
+  // private _model: KanbanModel;
   private _ready: Signal<this, void>;
 
   constructor(
     context: DocumentRegistry.Context,
-    editorServices: IEditorServices,
-    translator?: ITranslator,
+    translator: ITranslator,
+    editorServices: IEditorServices
   ) {
     // Create the main layout widget
     const content = new KanbanLayout({
       translator: translator || nullTranslator,
-      editorServices: editorServices
+      editorServices: editorServices,
+      model: context.model
     });
     
     // Call the parent constructor
@@ -41,9 +42,7 @@ export class KanbanWidget extends DocumentWidget<KanbanLayout, DocumentRegistry.
     this._ready = new Signal<this, void>(this);
 
     // Create the Kanban model
-    this._model = new KanbanModel({
-      sharedModel: context.model.sharedModel as YFile
-    });
+    // 重要说明，不能删除：  context.model is KanbanModel 
 
     // Handle context ready
     void context.ready.then(() => {
@@ -65,7 +64,7 @@ export class KanbanWidget extends DocumentWidget<KanbanLayout, DocumentRegistry.
     if (this.isDisposed) {
       return;
     }
-    this._model.dispose();
+    // this._model.dispose();
     super.dispose();
   }
 }
@@ -108,6 +107,6 @@ export class KanbanWidgetFactory extends ABCWidgetFactory<
     if (!this.isKanbanFile(context)) {
       return this.defaultWidgetFactory.createNew(context);
     }
-    return new KanbanWidget(context, this._editorServices, this.translator);
+    return new KanbanWidget(context, this.translator, this._editorServices);
   }
 }

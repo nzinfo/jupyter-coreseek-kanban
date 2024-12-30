@@ -17,6 +17,7 @@ import { KanbanLayout } from './KanbanLayout';
 import { TaskBoardHeaderEditor } from './TaskBoardHeaderEditor';
 import { IEditorServices } from '@jupyterlab/codeeditor';
 import { YFile } from '@jupyter/ydoc';
+import { DocumentRegistry } from '@jupyterlab/docregistry';
 
 /**
  * Task board header component
@@ -124,33 +125,41 @@ class TaskBoardContent extends Panel {
  */
 export class TaskBoardPanel extends SidePanel {
   constructor(options: TaskBoardPanel.IOptions) {
-    const { translator, editorServices } = options;
+    const { translator, editorServices, model } = options;
     super({ translator });
     
     this.addClass('jp-TaskBoard-panel');
     this.trans = translator.load('jupyter-coreseek-kanban');
 
-    // Create shared model for collaborative editing
-    this._sharedModel = new YFile();
+    // Get shared model from context model
+    this._sharedModel = (model.sharedModel as YFile);
     
-    // Initialize shared model with default content if empty
-    if (this._sharedModel.getSource().trim() === '') {
-      this._sharedModel.setSource('# Task Board\n\nThis is the task board description.');
-    }
-
     // Set up shared model change handling
     this._sharedModel.changed.connect((sender: YFile) => {
-      console.log('Shared model changed:', {
+      console.log('Shared model changed in TaskBoardPanel:', {
         content: sender.getSource().slice(0, 50)
       });
+      // 如果编辑器是打开的，更新其内容
+      if (this._headerEditor.isVisible) {
+        const currentContent = this._headerEditor.getContent();
+        const modelContent = sender.getSource();
+        if (currentContent !== modelContent) {
+          this._headerEditor.setContent(modelContent);
+        }
+      }
     });
 
-    // Add header editor panel
+    // Add header editor panel with the shared model
     this._headerEditor = new TaskBoardHeaderEditor({ 
       trans: this.trans,
       editorServices: editorServices,
       sharedModel: this._sharedModel
     });
+
+    // Initialize shared model with default content if empty
+    if (this._sharedModel.getSource().trim() === '') {
+      this._sharedModel.setSource('# Task Board\n\nThis is the task board description.');
+    }
 
     // Set up collaboration awareness
     if (this._sharedModel.awareness) {
@@ -166,23 +175,6 @@ export class TaskBoardPanel extends SidePanel {
       });
     }
 
-    this._headerEditor.setOnSave(() => {
-      // Save the content to persistent storage
-      const content = this._headerEditor.getContent();
-      console.log('Saving content:', content);
-      // TODO: Implement actual storage mechanism
-      this._headerEditor.hide();
-      this._headerEditor.parent = null;
-    });
-
-    this._headerEditor.setOnRevert(() => {
-      // Revert changes by reloading from storage
-      console.log('Reverting changes');
-      // TODO: Implement actual storage mechanism
-      this._headerEditor.hide();
-      this._headerEditor.parent = null;
-    });
-
     // Add header
     const header = new TaskBoardHeader(this.trans);
     header.setTasklistToggleCallback((visible) => {
@@ -192,9 +184,12 @@ export class TaskBoardPanel extends SidePanel {
       }
     });
     header.setHeaderClickCallback(() => {
+      // 获取当前 model 的内容
+      const currentContent = this._sharedModel.getSource();
+      console.log('Current model content:', currentContent);
+
       this.addWidget(this._headerEditor);
-      // TODO: Load content from markdown file
-      this._headerEditor.setContent('# Task Board\n\nThis is the task board description.');
+      this._headerEditor.setContent(currentContent);
       this._headerEditor.show();
     });
     this.header.addWidget(header);
@@ -219,6 +214,23 @@ export class TaskBoardPanel extends SidePanel {
     // Add task board content
     contentPanel.addWidget(new TaskBoardContent(this.trans));
     this.addWidget(contentPanel);
+
+    // Set up save and revert handlers
+    this._headerEditor.setOnSave(() => {
+      const content = this._headerEditor.getContent();
+      console.log('Saving content to model:', content);
+      this._sharedModel.setSource(content);
+      this._headerEditor.hide();
+      this._headerEditor.parent = null;
+    });
+
+    this._headerEditor.setOnRevert(() => {
+      const currentContent = this._sharedModel.getSource();
+      console.log('Reverting content from model:', currentContent);
+      this._headerEditor.setContent(currentContent);
+      this._headerEditor.hide();
+      this._headerEditor.parent = null;
+    });
   }
 
   protected trans: TranslationBundle;
@@ -240,8 +252,13 @@ export namespace TaskBoardPanel {
     translator: ITranslator;
 
     /**
-     * The editor services.
+     * The editor services for creating the editor.
      */
     editorServices: IEditorServices;
+
+    /**
+     * The document context model
+     */
+    model: DocumentRegistry.IModel;
   }
 }
