@@ -1,8 +1,7 @@
-// import { ReactWidget } from '@jupyterlab/ui-components';
 import { SplitPanel } from '@lumino/widgets';
 import { Message } from '@lumino/messaging';
 import { ITranslator, nullTranslator } from '@jupyterlab/translation';
-// import React from 'react';
+import { CommandRegistry } from '@lumino/commands';
 import { TaskListPanel } from './TaskListPanel';
 import { TaskBoardPanel } from './TaskBoardPanel';
 
@@ -18,9 +17,13 @@ export class KanbanLayout extends SplitPanel {
     });
 
     this._translator = options.translator || nullTranslator;
+    this._commands = options.commands;
     
     // Create left panel widget
-    this._tasklistWidget = new TaskListPanel({ translator: this._translator });
+    this._tasklistWidget = new TaskListPanel({ 
+      translator: this._translator,
+      commands: this._commands
+    });
     this._tasklistWidget.addClass('jp-KanbanLayout-right');
     
     // Create right panel widget
@@ -31,7 +34,7 @@ export class KanbanLayout extends SplitPanel {
     this.addWidget(this._boardWidget);
     this.addWidget(this._tasklistWidget);
     
-    // Set the relative sizes of the panels (30% left, 70% right)
+    // Set the relative sizes of the panels (90% left, 10% right)
     this.setRelativeSizes([0.9, 0.1]);
     
     this.id = 'jp-kanban-layout';
@@ -79,6 +82,7 @@ export class KanbanLayout extends SplitPanel {
   }
 
   protected readonly _translator: ITranslator;
+  private _commands: CommandRegistry | undefined;
   private _tasklistWidget: TaskListPanel;
   private _boardWidget: TaskBoardPanel;
 }
@@ -95,5 +99,6 @@ export namespace KanbanLayout {
      * The application language translator.
      */
     translator?: ITranslator;
+    commands?: CommandRegistry;
   }
 }

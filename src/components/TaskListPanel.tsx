@@ -1,8 +1,6 @@
 import { ITranslator, TranslationBundle } from '@jupyterlab/translation';
 import {
   PanelWithToolbar,
-  // ReactWidget,
-  // refreshIcon,
   SidePanel,
   ToolbarButton,
   addIcon
@@ -11,6 +9,10 @@ import { Panel } from '@lumino/widgets';
 // import { Drag } from '@lumino/dragdrop';
 import { TaskCard } from './TaskCard';
 import { DragDropManager } from './dragdrop';
+// import { TaskEditPanel } from './TaskEditPanel';
+import { CommandIDs } from '../commands';
+import { CommandRegistry } from '@lumino/commands';
+// import { JupyterFrontEnd } from '@jupyterlab/application';
 
 /**
  * Task column component showing tasks in a specific status
@@ -186,7 +188,7 @@ export class TaskColumn extends Panel {
  */
 export class TaskListPanel extends SidePanel {
   constructor(options: TaskListPanel.IOptions) {
-    const { translator } = options;
+    const { translator, commands } = options;
     super({ translator });
     
     this.addClass('jp-TaskList-panel');
@@ -203,7 +205,9 @@ export class TaskListPanel extends SidePanel {
       new ToolbarButton({
         icon: addIcon,
         onClick: () => {
-          console.log('Add new task clicked');
+          if (commands) {
+            commands.execute(CommandIDs.newTask);
+          }
         },
         tooltip: this.trans.__('Add new task')
       })
@@ -249,5 +253,6 @@ export namespace TaskListPanel {
    */
   export interface IOptions {
     translator: ITranslator;
+    commands?: CommandRegistry;
   }
 }

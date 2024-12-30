@@ -5,9 +5,12 @@ import {
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
 import { IEditorServices } from '@jupyterlab/codeeditor';
+import { ICommandPalette } from '@jupyterlab/apputils';
+import { ITranslator } from '@jupyterlab/translation';
 import { KanbanWidgetFactory } from './widget';
 import { KanbanModelFactory } from './model';
 import { IMarkdownViewerTracker } from '@jupyterlab/markdownviewer';
+import { addCommands } from './commands';
 
 /**
  * Initialization data for the @coreseek/jupyter-kanban extension.
@@ -16,16 +19,21 @@ const plugin: JupyterFrontEndPlugin<void> = {
   id: '@coreseek/jupyter-kanban:plugin',
   description: 'A JupyterLab extension for collaborative Kanban boards',
   autoStart: true,
-  requires: [IFileBrowserFactory, IEditorServices],
+  requires: [IFileBrowserFactory, IEditorServices, ICommandPalette, ITranslator],
   optional: [ISettingRegistry, IMarkdownViewerTracker],
   activate: (
     app: JupyterFrontEnd,
     browserFactory: IFileBrowserFactory,
     editorServices: IEditorServices,
+    palette: ICommandPalette,
+    translator: ITranslator,
     settingRegistry: ISettingRegistry | null,
     tracker?: IMarkdownViewerTracker
   ) => {
     console.log('JupyterLab extension @coreseek/jupyter-kanban is activated!');
+
+    // Add commands
+    addCommands(app, translator, palette);
 
     // Register the custom file type for .kmd files
     app.docRegistry.addFileType({
@@ -48,19 +56,24 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
     // 获取该文件类型的默认工厂
     const defaultFactory = app.docRegistry.defaultWidgetFactory("__.md");
+    if (!defaultFactory) {
+      console.warn('Default markdown widget factory not found');
+      return;
+    }
 
-    // Register the Kanban widget factory
-    const kanbanFactory = new KanbanWidgetFactory(defaultFactory, {
-      name: 'Kanban Widget',
-      fileTypes: ['kanban'],
-      defaultFor: ['kanban'],
-      modelName: 'kanban_model',
-      preferKernel: false,
-      canStartKernel: false
-    });
+    // Create and register the widget factory
+    const widgetFactory = new KanbanWidgetFactory(
+      defaultFactory,
+      {
+        name: 'Kanban Board',
+        fileTypes: ['kanban', 'markdown'],
+        defaultFor: ['kanban'],
+        translator: translator
+      }
+    );
 
     // Add a custom widget factory that checks for Kanban files
-    app.docRegistry.addWidgetFactory(kanbanFactory);
+    app.docRegistry.addWidgetFactory(widgetFactory);
     /* 
     重要说明： 勿删除
     目前没有办法重载一个已经存在关联的扩展名的 editor, 会被 docmanager-extension 在 onSettingsUpdated 时
@@ -81,7 +94,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
           const path = selectedItem.path;
           app.commands.execute('docmanager:open', {
             path,
-            factory: 'Kanban Widget'
+            factory: 'Kanban Board'
           });
         }
       }
