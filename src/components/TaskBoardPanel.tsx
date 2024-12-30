@@ -14,6 +14,7 @@ import {
 import { TaskColumn } from './TaskListPanel';
 import { Panel } from '@lumino/widgets';
 import { KanbanLayout } from './KanbanLayout';
+import { TaskBoardHeaderEditor } from './TaskBoardHeaderEditor';
 
 /**
  * Task board header component
@@ -35,7 +36,7 @@ class TaskBoardHeader extends ReactWidget {
           caseSensitive={false}
           disabled={false}
         />
-        <h2>{this.trans.__('Task Board')}</h2>
+        <h2 onClick={this._onClick}>{this.trans.__('Task Board')}</h2>
         <div className="jp-TaskBoard-headerButtons">
           <ToolbarButtonComponent
             icon={this._tasklistVisible ? caretRightIcon : caretLeftIcon}
@@ -60,8 +61,22 @@ class TaskBoardHeader extends ReactWidget {
     this._onTasklistToggle = callback;
   }
 
+  /**
+   * Set the callback for header click
+   */
+  setHeaderClickCallback(callback: () => void): void {
+    this._onHeaderClick = callback;
+  }
+
+  private _onClick = () => {
+    if (this._onHeaderClick) {
+      this._onHeaderClick();
+    }
+  };
+
   private _tasklistVisible: boolean;
   private _onTasklistToggle: ((visible: boolean) => void) | null = null;
+  private _onHeaderClick: (() => void) | null = null;
 }
 
 /**
@@ -113,6 +128,17 @@ export class TaskBoardPanel extends SidePanel {
     this.addClass('jp-TaskBoard-panel');
     this.trans = translator.load('jupyter-coreseek-kanban');
 
+    // Add header editor panel
+    this._headerEditor = new TaskBoardHeaderEditor({ trans: this.trans });
+    this._headerEditor.setOnSave(() => {
+      this._headerEditor.hide();
+      this._headerEditor.parent = null;
+    });
+    this._headerEditor.setOnRevert(() => {
+      this._headerEditor.hide();
+      this._headerEditor.parent = null;
+    });
+
     // Add header
     const header = new TaskBoardHeader(this.trans);
     header.setTasklistToggleCallback((visible) => {
@@ -120,6 +146,10 @@ export class TaskBoardPanel extends SidePanel {
       if (parent && parent instanceof KanbanLayout) {
         parent.toggleTaskList(visible);
       }
+    });
+    header.setHeaderClickCallback(() => {
+      this.addWidget(this._headerEditor);
+      this._headerEditor.show();
     });
     this.header.addWidget(header);
 
@@ -146,6 +176,7 @@ export class TaskBoardPanel extends SidePanel {
   }
 
   protected trans: TranslationBundle;
+  private _headerEditor: TaskBoardHeaderEditor;
 }
 
 /**

@@ -23,6 +23,11 @@
   text-align: center;
   white-space: nowrap;
   justify-self: center;
+  cursor: pointer;
+}
+
+.jp-TaskBoard-header h2:hover {
+  color: var(--jp-brand-color1);
 }
 
 /* Search box styles */
@@ -110,4 +115,28 @@
   flex: 1;
   padding: 8px;
   overflow-y: auto;
+}
+
+/* Task board header editor */
+.jp-TaskBoard-headerEditor {
+  display: none;
+  background-color: var(--jp-layout-color1);
+  border-bottom: var(--jp-border-width) solid var(--jp-border-color1);
+  min-height: 200px;
+  padding: 8px;
+}
+
+.jp-TaskBoard-headerEditor.lm-mod-hidden {
+  display: none;
+}
+
+.jp-TaskBoard-headerEditor:not(.lm-mod-hidden) {
+  display: flex;
+  flex-direction: column;
+}
+
+.jp-TaskBoard-headerEditor .jp-Toolbar {
+  padding: 0;
+  min-height: 27px;
+  border-bottom: var(--jp-border-width) solid var(--jp-border-color1);
 }
