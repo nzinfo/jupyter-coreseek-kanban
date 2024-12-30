@@ -2,6 +2,7 @@
 import { SplitPanel } from '@lumino/widgets';
 import { Message } from '@lumino/messaging';
 import { ITranslator, nullTranslator } from '@jupyterlab/translation';
+import { IEditorServices } from '@jupyterlab/codeeditor';
 // import React from 'react';
 import { TaskListPanel } from './TaskListPanel';
 import { TaskBoardPanel } from './TaskBoardPanel';
@@ -24,7 +25,10 @@ export class KanbanLayout extends SplitPanel {
     this._tasklistWidget.addClass('jp-KanbanLayout-right');
     
     // Create right panel widget
-    this._boardWidget = new TaskBoardPanel({ translator: this._translator });
+    this._boardWidget = new TaskBoardPanel({ 
+      translator: this._translator,
+      editorServices: options.editorServices
+    });
     this._boardWidget.addClass('jp-KanbanLayout-left');
     
     // Add widgets to the split panel
@@ -95,5 +99,6 @@ export namespace KanbanLayout {
      * The application language translator.
      */
     translator?: ITranslator;
+    editorServices: IEditorServices;
   }
 }

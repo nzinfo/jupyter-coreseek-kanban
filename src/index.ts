@@ -57,7 +57,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
       modelName: 'kanban_model',
       preferKernel: false,
       canStartKernel: false
-    });
+    }, editorServices);
 
     // Add a custom widget factory that checks for Kanban files
     app.docRegistry.addWidgetFactory(kanbanFactory);

@@ -14,6 +14,7 @@ import { YFile } from '@jupyter/ydoc';
 import { PathExt } from '@jupyterlab/coreutils';
 import { KanbanLayout } from './components/KanbanLayout';
 import { ITranslator, nullTranslator } from '@jupyterlab/translation';
+import { IEditorServices } from '@jupyterlab/codeeditor';
 
 /**
  * A widget for Kanban board functionality
@@ -24,11 +25,13 @@ export class KanbanWidget extends DocumentWidget<KanbanLayout, DocumentRegistry.
 
   constructor(
     context: DocumentRegistry.Context,
-    translator?: ITranslator
+    editorServices: IEditorServices,
+    translator?: ITranslator,
   ) {
     // Create the main layout widget
     const content = new KanbanLayout({
-      translator: translator || nullTranslator
+      translator: translator || nullTranslator,
+      editorServices: editorServices
     });
     
     // Call the parent constructor
@@ -75,16 +78,17 @@ export class KanbanWidgetFactory extends ABCWidgetFactory<
   DocumentRegistry.IModel
 > {
   readonly defaultWidgetFactory: DocumentRegistry.WidgetFactory;
-  //protected translator: ITranslator;
+  private _editorServices: IEditorServices;
 
   constructor(
     defaultFactory: DocumentRegistry.WidgetFactory,
     options: DocumentRegistry.IWidgetFactoryOptions<IDocumentWidget>,
-    translator?: ITranslator
+    editorServices: IEditorServices,
+    translator?: ITranslator,
   ) {
     super(options);
     this.defaultWidgetFactory = defaultFactory;
-    //this.translator = translator || nullTranslator;
+    this._editorServices = editorServices;
   }
 
   /**
@@ -104,6 +108,6 @@ export class KanbanWidgetFactory extends ABCWidgetFactory<
     if (!this.isKanbanFile(context)) {
       return this.defaultWidgetFactory.createNew(context);
     }
-    return new KanbanWidget(context, this.translator);
+    return new KanbanWidget(context, this._editorServices, this.translator);
   }
 }

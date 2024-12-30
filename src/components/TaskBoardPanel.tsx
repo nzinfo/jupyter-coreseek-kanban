@@ -15,6 +15,8 @@ import { TaskColumn } from './TaskListPanel';
 import { Panel } from '@lumino/widgets';
 import { KanbanLayout } from './KanbanLayout';
 import { TaskBoardHeaderEditor } from './TaskBoardHeaderEditor';
+import { IEditorServices } from '@jupyterlab/codeeditor';
+import { YFile } from '@jupyter/ydoc';
 
 /**
  * Task board header component
@@ -122,19 +124,29 @@ class TaskBoardContent extends Panel {
  */
 export class TaskBoardPanel extends SidePanel {
   constructor(options: TaskBoardPanel.IOptions) {
-    const { translator } = options;
+    const { translator, editorServices } = options;
     super({ translator });
     
     this.addClass('jp-TaskBoard-panel');
     this.trans = translator.load('jupyter-coreseek-kanban');
 
+    // Create shared model for collaborative editing
+    this._sharedModel = new YFile();
+
     // Add header editor panel
-    this._headerEditor = new TaskBoardHeaderEditor({ trans: this.trans });
+    this._headerEditor = new TaskBoardHeaderEditor({ 
+      trans: this.trans,
+      editorServices: editorServices,
+      sharedModel: this._sharedModel
+    });
     this._headerEditor.setOnSave(() => {
+      // TODO: Save the content to the markdown file
+      console.log('Content to save:', this._headerEditor.getContent());
       this._headerEditor.hide();
       this._headerEditor.parent = null;
     });
     this._headerEditor.setOnRevert(() => {
+      // TODO: Revert the content from the markdown file
       this._headerEditor.hide();
       this._headerEditor.parent = null;
     });
@@ -149,6 +161,8 @@ export class TaskBoardPanel extends SidePanel {
     });
     header.setHeaderClickCallback(() => {
       this.addWidget(this._headerEditor);
+      // TODO: Load content from markdown file
+      this._headerEditor.setContent('# Task Board\n\nThis is the task board description.');
       this._headerEditor.show();
     });
     this.header.addWidget(header);
@@ -177,6 +191,7 @@ export class TaskBoardPanel extends SidePanel {
 
   protected trans: TranslationBundle;
   private _headerEditor: TaskBoardHeaderEditor;
+  private _sharedModel: YFile;
 }
 
 /**
@@ -191,5 +206,10 @@ export namespace TaskBoardPanel {
      * The application language translator.
      */
     translator: ITranslator;
+
+    /**
+     * The editor services.
+     */
+    editorServices: IEditorServices;
   }
 }
