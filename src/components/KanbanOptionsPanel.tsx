@@ -1,75 +1,58 @@
 import React from 'react';
 import { ReactWidget } from '@jupyterlab/apputils';
 import { TranslationBundle } from '@jupyterlab/translation';
-import { addIcon, closeIcon, moveDownIcon, moveUpIcon, editIcon } from '@jupyterlab/ui-components';
+import { addIcon, closeIcon, caretUpIcon, caretDownIcon } from '@jupyterlab/ui-components';
 
 interface IStage {
-  id: string;
   name: string;
   categories: ICategory[];
 }
 
 interface ICategory {
-  id: string;
   name: string;
 }
 
 interface IKanbanOptionsPanelProps {
   trans: TranslationBundle;
-  // onClose: () => void;
+}
+
+interface IEditState {
+  type: 'stage' | 'category';
+  index: number;
+  categoryIndex?: number;
+  isNew?: boolean;
+  value: string;
 }
 
 export class KanbanOptionsPanel extends ReactWidget {
   constructor(options: IKanbanOptionsPanelProps) {
     super();
     this._trans = options.trans;
-    //this._onClose = options.onClose;
     this.addClass('jp-KanbanOptions-panel');
 
     // Initialize with some default stages and categories
     this._stages = [
       {
-        id: '1',
-        name: 'Design',
+        name: this._trans.__('Backlog'),
         categories: [
-          { id: '1', name: 'Todo' },
-          { id: '2', name: 'Doing' },
-          { id: '3', name: 'Done' }
+          { name: this._trans.__('Bug') },
+          { name: this._trans.__('Feature') }
         ]
       },
       {
-        id: '2',
-        name: 'Implementation',
-        categories: [
-          { id: '4', name: 'Todo' },
-          { id: '5', name: 'In Progress' },
-          { id: '6', name: 'Review' },
-          { id: '7', name: 'Done' }
-        ]
+        name: this._trans.__('In Progress'),
+        categories: []
       }
     ];
+
+    this._editState = null;
   }
 
-  render(): JSX.Element {
+  protected render(): React.ReactElement<any> {
     return (
       <div className="jp-KanbanOptions-container">
-        <div className="jp-KanbanOptions-header">
-          <h3>{this._trans.__('Stages')}</h3>
-              <div className="jp-ToolbarButton jp-Toolbar-item">
-                <button 
-                  className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                  onClick={this._addStage}
-                  title={this._trans.__('Add Stage')}
-                >
-                  <addIcon.react tag="span" className="jp-Icon" />
-                </button>
-              </div>
-        </div>
         <div className="jp-KanbanOptions-content">
           <div className="jp-KanbanOptions-stages">
-            <div className="jp-KanbanOptions-section-header">
-              
-            </div>
             {this._stages.map((stage, index) => this._renderStage(stage, index))}
           </div>
         </div>
@@ -78,223 +61,250 @@ export class KanbanOptionsPanel extends ReactWidget {
   }
 
   private _renderStage(stage: IStage, index: number): JSX.Element {
+    const isEditing = this._editState?.type === 'stage' && this._editState.index === index;
+
     return (
-      <div key={stage.id} className="jp-KanbanOptions-stage">
-        <div className="jp-KanbanOptions-stage-panel">
-          <div className="jp-KanbanOptions-stage-header">
-            <span>{stage.name}</span>
-            <div className="jp-KanbanOptions-stage-actions">
-              <div className="jp-ToolbarButton jp-Toolbar-item">
-                <button 
-                  className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                  onClick={() => this._moveStage(index, -1)}
-                  title={this._trans.__('Move Up')}
-                  disabled={index === 0}
-                >
-                  <moveUpIcon.react tag="span" className="jp-Icon" />
-                </button>
-              </div>
-              <div className="jp-ToolbarButton jp-Toolbar-item">
-                <button 
-                  className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                  onClick={() => this._moveStage(index, 1)}
-                  title={this._trans.__('Move Down')}
-                  disabled={index === this._stages.length - 1}
-                >
-                  <moveDownIcon.react tag="span" className="jp-Icon" />
-                </button>
-              </div>
-              <div className="jp-ToolbarButton jp-Toolbar-item">
-                <button 
-                  className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                  onClick={() => this._editStageName(stage)}
-                  title={this._trans.__('Edit Name')}
-                >
-                  <editIcon.react tag="span" className="jp-Icon" />
-                </button>
-              </div>
-              <div className="jp-ToolbarButton jp-Toolbar-item">
-                <button 
-                  className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                  onClick={() => this._deleteStage(stage)}
-                  title={this._trans.__('Delete Stage')}
-                >
-                  <closeIcon.react tag="span" className="jp-Icon" />
-                </button>
-              </div>
-              <div className="jp-ToolbarButton jp-Toolbar-item">
-                <button 
-                  className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                  onClick={() => this._addCategory(stage)}
-                  title={this._trans.__('Add Category')}
-                >
-                  <addIcon.react tag="span" className="jp-Icon" />
-                </button>
-              </div>
+      <div key={index} className="jp-KanbanOptions-stage">
+        <div className="jp-KanbanOptions-stage-header">
+          {isEditing ? (
+            <input
+              type="text"
+              className="jp-KanbanOptions-edit-input"
+              value={this._editState?.value || ''}
+              onChange={this._handleEditChange}
+              onKeyDown={this._handleEditKeyDown}
+              autoFocus
+            />
+          ) : (
+            <span onDoubleClick={() => this._startEdit('stage', index, stage.name)}>
+              {stage.name}
+            </span>
+          )}
+          <div className="jp-KanbanOptions-stage-actions">
+            <div className="jp-ToolbarButton jp-Toolbar-item">
+              <button 
+                className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
+                onClick={() => this._addCategory(stage, index)}
+                title={this._trans.__('Add Category')}
+              >
+                <addIcon.react tag="span" className="jp-Icon" />
+              </button>
+            </div>
+            <div className="jp-ToolbarButton jp-Toolbar-item">
+              <button 
+                className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
+                onClick={() => this._moveStage(index, -1)}
+                title={this._trans.__('Move Up')}
+                disabled={index === 0}
+              >
+                <caretUpIcon.react tag="span" className="jp-Icon" />
+              </button>
+            </div>
+            <div className="jp-ToolbarButton jp-Toolbar-item">
+              <button 
+                className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
+                onClick={() => this._moveStage(index, 1)}
+                title={this._trans.__('Move Down')}
+                disabled={index === this._stages.length - 1}
+              >
+                <caretDownIcon.react tag="span" className="jp-Icon" />
+              </button>
+            </div>
+            <div className="jp-ToolbarButton jp-Toolbar-item">
+              <button 
+                className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
+                onClick={() => this._removeStage(index)}
+                title={this._trans.__('Remove Stage')}
+              >
+                <closeIcon.react tag="span" className="jp-Icon" />
+              </button>
             </div>
           </div>
-          <div className="jp-KanbanOptions-categories">
-            {stage.categories.map((category, catIndex) => (
-              <div key={category.id} className="jp-KanbanOptions-category">
-                <span>{category.name}</span>
-                <div className="jp-KanbanOptions-category-actions">
-                  <div className="jp-ToolbarButton jp-Toolbar-item">
-                    <button 
-                      className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                      onClick={() => this._moveCategory(stage, catIndex, -1)}
-                      title={this._trans.__('Move Up')}
-                      disabled={catIndex === 0}
-                    >
-                      <moveUpIcon.react tag="span" className="jp-Icon" />
-                    </button>
-                  </div>
-                  <div className="jp-ToolbarButton jp-Toolbar-item">
-                    <button 
-                      className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                      onClick={() => this._moveCategory(stage, catIndex, 1)}
-                      title={this._trans.__('Move Down')}
-                      disabled={catIndex === stage.categories.length - 1}
-                    >
-                      <moveDownIcon.react tag="span" className="jp-Icon" />
-                    </button>
-                  </div>
-                  <div className="jp-ToolbarButton jp-Toolbar-item">
-                    <button 
-                      className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                      onClick={() => this._editCategoryName(stage, category)}
-                      title={this._trans.__('Edit Name')}
-                    >
-                      <editIcon.react tag="span" className="jp-Icon" />
-                    </button>
-                  </div>
-                  <div className="jp-ToolbarButton jp-Toolbar-item">
-                    <button 
-                      className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                      onClick={() => this._deleteCategory(stage, category)}
-                      title={this._trans.__('Delete Category')}
-                    >
-                      <closeIcon.react tag="span" className="jp-Icon" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+        </div>
+        <div className="jp-KanbanOptions-categories">
+          {stage.categories.map((category, categoryIndex) => 
+            this._renderCategory(category, index, categoryIndex)
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  private _renderCategory(category: ICategory, stageIndex: number, categoryIndex: number): JSX.Element {
+    const isEditing = this._editState?.type === 'category' && 
+                     this._editState.index === stageIndex && 
+                     this._editState.categoryIndex === categoryIndex;
+
+    return (
+      <div key={categoryIndex} className="jp-KanbanOptions-category">
+        {isEditing ? (
+          <input
+            type="text"
+            className="jp-KanbanOptions-edit-input"
+            value={this._editState?.value || ''}
+            onChange={this._handleEditChange}
+            onKeyDown={this._handleEditKeyDown}
+            autoFocus
+          />
+        ) : (
+          <span onDoubleClick={() => this._startEdit('category', stageIndex, category.name, categoryIndex)}>
+            {category.name}
+          </span>
+        )}
+        <div className="jp-KanbanOptions-category-actions">
+          <div className="jp-ToolbarButton jp-Toolbar-item">
+            <button 
+              className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
+              onClick={() => this._moveCategory(stageIndex, categoryIndex, -1)}
+              title={this._trans.__('Move Up')}
+              disabled={categoryIndex === 0}
+            >
+              <caretUpIcon.react tag="span" className="jp-Icon" />
+            </button>
+          </div>
+          <div className="jp-ToolbarButton jp-Toolbar-item">
+            <button 
+              className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
+              onClick={() => this._moveCategory(stageIndex, categoryIndex, 1)}
+              title={this._trans.__('Move Down')}
+              disabled={categoryIndex === this._stages[stageIndex].categories.length - 1}
+            >
+              <caretDownIcon.react tag="span" className="jp-Icon" />
+            </button>
+          </div>
+          <div className="jp-ToolbarButton jp-Toolbar-item">
+            <button 
+              className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
+              onClick={() => this._removeCategory(stageIndex, categoryIndex)}
+              title={this._trans.__('Remove Category')}
+            >
+              <closeIcon.react tag="span" className="jp-Icon" />
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
-  private _addStage = (): void => {
-    const name = prompt(this._trans.__('Enter stage name:'));
-    if (name) {
-      const newStage: IStage = {
-        id: Date.now().toString(),
-        name,
-        categories: [
-          { id: `${Date.now()}-1`, name: 'Todo' },
-          { id: `${Date.now()}-2`, name: 'Done' }
-        ]
+  private _startEdit = (
+    type: 'stage' | 'category',
+    index: number,
+    value: string,
+    categoryIndex?: number,
+    isNew: boolean = false
+  ): void => {
+    this._editState = {
+      type,
+      index,
+      categoryIndex,
+      value,
+      isNew
+    };
+    this.update();
+  };
+
+  private _handleEditChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    if (this._editState) {
+      this._editState = {
+        ...this._editState,
+        value: event.target.value
       };
-      this._stages = [...this._stages, newStage];
       this.update();
     }
   };
 
-  private _editStageName = (stage: IStage): void => {
-    const name = prompt(this._trans.__('Enter new stage name:'), stage.name);
-    if (name) {
-      this._stages = this._stages.map(s => 
-        s.id === stage.id ? { ...s, name } : s
-      );
+  private _handleEditKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (event.key === 'Enter') {
+      this._commitEdit();
+    } else if (event.key === 'Escape') {
+      if (this._editState?.isNew) {
+        if (this._editState.type === 'stage') {
+          this._stages.splice(this._editState.index, 1);
+        } else {
+          this._stages[this._editState.index].categories.splice(this._editState.categoryIndex!, 1);
+        }
+      }
+      this._editState = null;
       this.update();
     }
   };
 
-  private _deleteStage = (stage: IStage): void => {
-    if (confirm(this._trans.__('Are you sure you want to delete this stage? This action cannot be undone.'))) {
-      this._stages = this._stages.filter(s => s.id !== stage.id);
+  private _commitEdit = (): void => {
+    if (!this._editState || !this._editState.value.trim()) {
+      if (this._editState?.isNew) {
+        if (this._editState.type === 'stage') {
+          this._stages.splice(this._editState.index, 1);
+        } else {
+          this._stages[this._editState.index].categories.splice(this._editState.categoryIndex!, 1);
+        }
+      }
+      this._editState = null;
       this.update();
+      return;
     }
+
+    const { type, index, categoryIndex, value } = this._editState;
+
+    if (type === 'stage') {
+      this._stages[index].name = value.trim();
+    } else if (type === 'category') {
+      this._stages[index].categories[categoryIndex!].name = value.trim();
+    }
+
+    this._editState = null;
+    this.update();
+  };
+
+  private _addCategory = (stage: IStage, stageIndex: number): void => {
+    const newCategory: ICategory = {
+      name: ''
+    };
+    stage.categories.push(newCategory);
+    this._startEdit('category', stageIndex, '', stage.categories.length - 1, true);
   };
 
   private _moveStage = (index: number, direction: number): void => {
     const newIndex = index + direction;
     if (newIndex >= 0 && newIndex < this._stages.length) {
-      const stages = [...this._stages];
-      const [removed] = stages.splice(index, 1);
-      stages.splice(newIndex, 0, removed);
-      this._stages = stages;
+      const stage = this._stages[index];
+      this._stages.splice(index, 1);
+      this._stages.splice(newIndex, 0, stage);
       this.update();
     }
   };
 
-  private _addCategory = (stage: IStage): void => {
-    const name = prompt(this._trans.__('Enter category name:'));
-    if (name) {
-      this._stages = this._stages.map(s => {
-        if (s.id === stage.id) {
-          return {
-            ...s,
-            categories: [...s.categories, { id: Date.now().toString(), name }]
-          };
-        }
-        return s;
-      });
+  private _removeStage = (index: number): void => {
+    this._stages.splice(index, 1);
+    this.update();
+  };
+
+  private _moveCategory = (stageIndex: number, categoryIndex: number, direction: number): void => {
+    const categories = this._stages[stageIndex].categories;
+    const newIndex = categoryIndex + direction;
+    if (newIndex >= 0 && newIndex < categories.length) {
+      const category = categories[categoryIndex];
+      categories.splice(categoryIndex, 1);
+      categories.splice(newIndex, 0, category);
       this.update();
     }
   };
 
-  private _editCategoryName = (stage: IStage, category: ICategory): void => {
-    const name = prompt(this._trans.__('Enter new category name:'), category.name);
-    if (name) {
-      this._stages = this._stages.map(s => {
-        if (s.id === stage.id) {
-          return {
-            ...s,
-            categories: s.categories.map(c =>
-              c.id === category.id ? { ...c, name } : c
-            )
-          };
-        }
-        return s;
-      });
-      this.update();
-    }
+  private _removeCategory = (stageIndex: number, categoryIndex: number): void => {
+    this._stages[stageIndex].categories.splice(categoryIndex, 1);
+    this.update();
   };
 
-  private _deleteCategory = (stage: IStage, category: ICategory): void => {
-    if (confirm(this._trans.__('Are you sure you want to delete this category? This action cannot be undone.'))) {
-      this._stages = this._stages.map(s => {
-        if (s.id === stage.id) {
-          return {
-            ...s,
-            categories: s.categories.filter(c => c.id !== category.id)
-          };
-        }
-        return s;
-      });
-      this.update();
-    }
-  };
-
-  private _moveCategory = (stage: IStage, index: number, direction: number): void => {
-    const newIndex = index + direction;
-    if (newIndex >= 0 && newIndex < stage.categories.length) {
-      this._stages = this._stages.map(s => {
-        if (s.id === stage.id) {
-          const categories = [...s.categories];
-          const [removed] = categories.splice(index, 1);
-          categories.splice(newIndex, 0, removed);
-          return { ...s, categories };
-        }
-        return s;
-      });
-      this.update();
-    }
-  };
+  // Add a method to create a new stage
+  addNewStage(): void {
+    const newStage: IStage = {
+      name: '',
+      categories: []
+    };
+    this._stages.push(newStage);
+    this._startEdit('stage', this._stages.length - 1, '', undefined, true);
+  }
 
   private _stages: IStage[];
+  private _editState: IEditState | null;
   private readonly _trans: TranslationBundle;
-  // private readonly _onClose: () => void;
 }

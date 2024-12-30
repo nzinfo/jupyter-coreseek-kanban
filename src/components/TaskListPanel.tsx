@@ -198,6 +198,17 @@ export class TaskListPanel extends SidePanel {
     const optionsPanel = new PanelWithToolbar();
     optionsPanel.addClass('jp-TaskList-section');
     optionsPanel.title.label = this.trans.__('Kanban Settings');
+    // Add new task button to toolbar
+    optionsPanel.toolbar.addItem(
+      'newStage',
+      new ToolbarButton({
+        icon: addIcon,
+        onClick: () => {
+          this._optionsWidget.addNewStage();
+        },
+        tooltip: this.trans.__('Add new stage')
+      })
+    );
     this._optionsWidget = new KanbanOptionsPanel({
       trans: this.trans,
       // onClose: () => this._hideOptionsPanel()
