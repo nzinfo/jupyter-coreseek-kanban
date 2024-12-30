@@ -49,6 +49,11 @@
   background: var(--jp-layout-color3);
 }
 
+.jp-TaskList-section.jp-mod-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 /* Toolbar styles */
 .jp-TaskList-section .jp-Toolbar {
   padding: 4px;
@@ -57,6 +62,10 @@
 
 .jp-TaskList-section .jp-Toolbar-item {
   margin-right: 4px;
+}
+
+.jp-Toolbar-item.jp-ToolbarButton.jp-mod-pressed button {
+  background-color: var(--jp-layout-color3);
 }
 
 /* Drop indicator styles */

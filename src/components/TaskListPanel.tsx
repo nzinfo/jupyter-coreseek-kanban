@@ -194,27 +194,36 @@ export class TaskListPanel extends SidePanel {
     this.addClass('jp-TaskList-panel');
     this.trans = translator.load('jupyter-coreseek-kanban');
 
-    // Create the options panel
-    this._optionsPanel = new KanbanOptionsPanel({
+    // Create the options panel with toolbar
+    const optionsPanel = new PanelWithToolbar();
+    optionsPanel.addClass('jp-TaskList-section');
+    optionsPanel.title.label = this.trans.__('Kanban Settings');
+    this._optionsWidget = new KanbanOptionsPanel({
       trans: this.trans,
       onClose: () => this._hideOptionsPanel()
     });
+    optionsPanel.addWidget(this._optionsWidget);
+    this._optionsPanel = optionsPanel;
 
     // Add Backlog panel with example tasks
     const backlogPanel = new PanelWithToolbar();
     backlogPanel.addClass('jp-TaskList-section');
     backlogPanel.title.label = this.trans.__('Backlog');
     
-    backlogPanel.toolbar.addItem(
-      'moreOptions',
-      new ToolbarButton({
-        icon: tocIcon,
-        onClick: () => this._showOptionsPanel(),
-        tooltip: this.trans.__('More Options')
-      })
-    );
+    // Create more options button with toggle state
+    const moreOptionsButton = new ToolbarButton({
+      icon: tocIcon,
+      onClick: () => {
+        this._toggleOptionsPanel();
+      },
+      tooltip: this.trans.__('More Options'),
+      pressed: false
+    });
+    this._moreOptionsButton = moreOptionsButton;
+    
+    backlogPanel.toolbar.addItem('moreOptions', moreOptionsButton);
 
-    // Add new task button and more options button to toolbar
+    // Add new task button to toolbar
     backlogPanel.toolbar.addItem(
       'newTask',
       new ToolbarButton({
@@ -225,52 +234,85 @@ export class TaskListPanel extends SidePanel {
         tooltip: this.trans.__('Add new task')
       })
     );
-
-
     
-    this._backlogColumn = new TaskColumn(this.trans, true); // 添加示例任务
+    this._backlogColumn = new TaskColumn(this.trans, true);
     backlogPanel.addWidget(this._backlogColumn);
-    this.addWidget(backlogPanel);
+    this._backlogPanel = backlogPanel;
 
-    // Add Done panel without example tasks
+    // Add Done panel
     const donePanel = new PanelWithToolbar();
     donePanel.addClass('jp-TaskList-section');
     donePanel.title.label = this.trans.__('Done');
     
-    // Add remove all button to toolbar
-    donePanel.toolbar.addItem(
-      'removeAll',
-      new ToolbarButton({
-        className: 'jp-TaskList-removeAll',
-        label: this.trans.__('Delete All'),
-        onClick: () => {
-          console.log('Delete all tasks');
-        }
-      })
-    );
-    
-    this._doneColumn = new TaskColumn(this.trans, false); // 不添加示例任务
+    this._doneColumn = new TaskColumn(this.trans);
     donePanel.addWidget(this._doneColumn);
+    this._donePanel = donePanel;
+
+    // Add panels to the layout
+    this.addWidget(backlogPanel);
     this.addWidget(donePanel);
   }
 
-  protected trans: TranslationBundle;
-  private _backlogColumn: TaskColumn;
-  private _doneColumn: TaskColumn;
-
-  private _showOptionsPanel(): void {
+  private _toggleOptionsPanel(): void {
     if (!this._optionsPanel.isAttached) {
+      // Store panels' collapsed state
+      this._backlogPanelExpanded = !this._backlogPanel.hasClass('jp-mod-collapsed');
+      this._donePanelExpanded = !this._donePanel.hasClass('jp-mod-collapsed');
+
+      // Collapse panels
+      this._backlogPanel.addClass('jp-mod-collapsed');
+      this._donePanel.addClass('jp-mod-collapsed');
+      this._backlogPanel.node.setAttribute('aria-expanded', 'false');
+      this._donePanel.node.setAttribute('aria-expanded', 'false');
+      this._backlogPanel.hide();
+      this._donePanel.hide();
+
+      // Disable panels
+      this._backlogPanel.addClass('jp-mod-disabled');
+      this._donePanel.addClass('jp-mod-disabled');
+
+      // Show options panel
       this.addWidget(this._optionsPanel);
+      this._moreOptionsButton.pressed = true;
+    } else {
+      this._hideOptionsPanel();
     }
   }
 
   private _hideOptionsPanel(): void {
     if (this._optionsPanel.isAttached) {
+      // Remove options panel
       this._optionsPanel.parent = null;
+      this._moreOptionsButton.pressed = false;
+
+      // Enable panels
+      this._backlogPanel.removeClass('jp-mod-disabled');
+      this._donePanel.removeClass('jp-mod-disabled');
+
+      // Restore panels' previous state
+      if (this._backlogPanelExpanded) {
+        this._backlogPanel.removeClass('jp-mod-collapsed');
+        this._backlogPanel.node.setAttribute('aria-expanded', 'true');
+        this._backlogPanel.show();
+      }
+      if (this._donePanelExpanded) {
+        this._donePanel.removeClass('jp-mod-collapsed');
+        this._donePanel.node.setAttribute('aria-expanded', 'true');
+        this._donePanel.show();
+      }
     }
   }
 
-  private _optionsPanel: KanbanOptionsPanel;
+  protected trans: TranslationBundle;
+  private _backlogColumn: TaskColumn;
+  private _doneColumn: TaskColumn;
+  private _optionsWidget: KanbanOptionsPanel;
+  private _optionsPanel: PanelWithToolbar;
+  private _backlogPanel: PanelWithToolbar;
+  private _donePanel: PanelWithToolbar;
+  private _moreOptionsButton: ToolbarButton;
+  private _backlogPanelExpanded: boolean = true;
+  private _donePanelExpanded: boolean = true;
 }
 
 /**

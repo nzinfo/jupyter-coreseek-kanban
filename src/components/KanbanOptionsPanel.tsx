@@ -54,7 +54,6 @@ export class KanbanOptionsPanel extends ReactWidget {
     return (
       <div className="jp-KanbanOptions-container">
         <div className="jp-KanbanOptions-header">
-          <h2>{this._trans.__('Kanban Board Settings')}</h2>
           <div className="jp-ToolbarButton jp-Toolbar-item">
             <button 
               className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
