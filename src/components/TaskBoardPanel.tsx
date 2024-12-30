@@ -10,7 +10,6 @@ import {
   ToolbarButtonComponent,
   caretUpEmptyThinIcon,
   caretDownEmptyThinIcon,
-  numberingIcon,
   caretLeftIcon,
   caretRightIcon
 } from '@jupyterlab/ui-components';
@@ -40,13 +39,6 @@ class TaskBoardHeader extends ReactWidget {
         />
         <h2>{this.trans.__('Task Board')}</h2>
         <div className="jp-TaskBoard-headerButtons">
-          <ToolbarButtonComponent
-            icon={numberingIcon}
-            onClick={() => {
-              console.log('More options clicked');
-            }}
-            tooltip={this.trans.__('More options')}
-          />
           <ToolbarButtonComponent
             icon={this._tasklistVisible ? caretRightIcon : caretLeftIcon}
             onClick={() => {

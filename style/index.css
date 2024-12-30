@@ -1,4 +1,5 @@
-@import url('base.css');
+@import url('./base.css');
+@import url('./kanban-options.css');
 @import url('tasklist.css');
 @import url('taskboard.css');
 @import url('taskcard.css');

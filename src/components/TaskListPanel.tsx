@@ -5,12 +5,14 @@ import {
   // refreshIcon,
   SidePanel,
   ToolbarButton,
-  addIcon
+  addIcon,
+  tocIcon
 } from '@jupyterlab/ui-components';
 import { Panel } from '@lumino/widgets';
 // import { Drag } from '@lumino/dragdrop';
 import { TaskCard } from './TaskCard';
 import { DragDropManager } from './dragdrop';
+import { KanbanOptionsPanel } from './KanbanOptionsPanel';
 
 /**
  * Task column component showing tasks in a specific status
@@ -192,12 +194,27 @@ export class TaskListPanel extends SidePanel {
     this.addClass('jp-TaskList-panel');
     this.trans = translator.load('jupyter-coreseek-kanban');
 
+    // Create the options panel
+    this._optionsPanel = new KanbanOptionsPanel({
+      trans: this.trans,
+      onClose: () => this._hideOptionsPanel()
+    });
+
     // Add Backlog panel with example tasks
     const backlogPanel = new PanelWithToolbar();
     backlogPanel.addClass('jp-TaskList-section');
     backlogPanel.title.label = this.trans.__('Backlog');
     
-    // Add new task button to toolbar
+    backlogPanel.toolbar.addItem(
+      'moreOptions',
+      new ToolbarButton({
+        icon: tocIcon,
+        onClick: () => this._showOptionsPanel(),
+        tooltip: this.trans.__('More Options')
+      })
+    );
+
+    // Add new task button and more options button to toolbar
     backlogPanel.toolbar.addItem(
       'newTask',
       new ToolbarButton({
@@ -208,6 +225,8 @@ export class TaskListPanel extends SidePanel {
         tooltip: this.trans.__('Add new task')
       })
     );
+
+
     
     this._backlogColumn = new TaskColumn(this.trans, true); // 添加示例任务
     backlogPanel.addWidget(this._backlogColumn);
@@ -238,6 +257,20 @@ export class TaskListPanel extends SidePanel {
   protected trans: TranslationBundle;
   private _backlogColumn: TaskColumn;
   private _doneColumn: TaskColumn;
+
+  private _showOptionsPanel(): void {
+    if (!this._optionsPanel.isAttached) {
+      this.addWidget(this._optionsPanel);
+    }
+  }
+
+  private _hideOptionsPanel(): void {
+    if (this._optionsPanel.isAttached) {
+      this._optionsPanel.parent = null;
+    }
+  }
+
+  private _optionsPanel: KanbanOptionsPanel;
 }
 
 /**

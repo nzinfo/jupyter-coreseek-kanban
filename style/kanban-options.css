@@ -1,0 +1,113 @@
+.jp-KanbanOptions-panel {
+  background: var(--jp-layout-color1);
+  color: var(--jp-ui-font-color1);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.jp-KanbanOptions-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 16px;
+}
+
+.jp-KanbanOptions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--jp-border-color2);
+}
+
+.jp-KanbanOptions-header h2 {
+  margin: 0;
+  font-size: var(--jp-ui-font-size2);
+  font-weight: 600;
+}
+
+.jp-KanbanOptions-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.jp-KanbanOptions-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.jp-KanbanOptions-section-header h3 {
+  margin: 0;
+  font-size: var(--jp-ui-font-size1);
+  font-weight: 600;
+}
+
+.jp-KanbanOptions-stage {
+  margin-bottom: 16px;
+}
+
+.jp-KanbanOptions-stage-panel {
+  background: var(--jp-layout-color2);
+  border-radius: 4px;
+  padding: 8px;
+  box-shadow: var(--jp-elevation-z1);
+}
+
+.jp-KanbanOptions-stage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  background: var(--jp-layout-color2);
+  border-radius: 4px;
+}
+
+.jp-KanbanOptions-stage-actions,
+.jp-KanbanOptions-category-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.jp-KanbanOptions-categories {
+  margin-top: 8px;
+  padding-left: 16px;
+}
+
+.jp-KanbanOptions-category {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  background: var(--jp-layout-color1);
+  border: 1px solid var(--jp-border-color2);
+  border-radius: 4px;
+}
+
+.jp-KanbanOptions-category:hover {
+  background: var(--jp-layout-color2);
+}
+
+.jp-KanbanOptions-stage-header span,
+.jp-KanbanOptions-category span {
+  font-size: var(--jp-ui-font-size1);
+  font-weight: 500;
+}
+
+.jp-ToolbarButtonComponent.jp-mod-minimal {
+  background: none;
+  border: none;
+}
+
+.jp-ToolbarButtonComponent.jp-mod-minimal:hover:not(:disabled) {
+  background-color: var(--jp-layout-color3);
+}
+
+.jp-ToolbarButtonComponent.jp-mod-minimal:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
