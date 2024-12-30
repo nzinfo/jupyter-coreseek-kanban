@@ -32,7 +32,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
       name: 'kanban',
       extensions: ['.kmd'],
       displayName: 'Kanban Board',
-      mimeTypes: ['text/markdown']
+      mimeTypes: ['application/x-kanban']
     });
 
     // Create and register the model factory

@@ -106,8 +106,15 @@ export class KanbanWidgetFactory extends ABCWidgetFactory<
    * @param context Document context
    */
   createNewWidget(context: DocumentRegistry.Context): IDocumentWidget {
+    // 只处理 .kmd 文件，其他文件交给默认工厂处理
     if (!this.isKanbanFile(context)) {
+      console.log('Not a kanban file, using default factory:', context.path);
       return this.defaultWidgetFactory.createNew(context);
+    }
+    
+    // 确保使用正确的 model
+    if (!(context.model instanceof KanbanModel)) {
+      console.warn('Model is not a KanbanModel instance:', context.model);
     }
     
     return new KanbanWidget(context, this.translator, this._editorServices);
