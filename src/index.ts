@@ -54,7 +54,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
       name: 'Kanban Widget',
       fileTypes: ['kanban'],
       defaultFor: ['kanban'],
-      modelName: 'kanban_model',
+      modelName: 'text',
+      // modelName: 'kanban_model',
       preferKernel: false,
       canStartKernel: false
     }, editorServices);
