@@ -101,12 +101,11 @@ export class TaskColumn extends Panel {
   }
 
   private handleDragOver(event: DragEvent): void {
-    const dragData = event.dataTransfer?.getData('application/x-taskcard');
-    if (dragData) {
+    // 检查是否有正在拖拽的源
+    if (DragDropManager.dragSource) {
       event.preventDefault();
-      event.stopPropagation();
       event.dataTransfer!.dropEffect = 'move';
-
+      
       // 更新放置指示器位置
       this._updateDropIndicator(event.clientY);
     }
