@@ -162,13 +162,13 @@ export class TaskBoardPanel extends SidePanel {
     );
 
     contentPanel.toolbar.addItem(
-      'newTask',
+      'newStage',
       new ToolbarButton({
         icon: addIcon,
         onClick: () => {
-          console.log('Add new task clicked');
+          console.log('Add new stage clicked');
         },
-        tooltip: this.trans.__('Add new task')
+        tooltip: this.trans.__('Add new stage')
       })
     );
 
