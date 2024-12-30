@@ -17,6 +17,7 @@ import { KanbanLayout } from './KanbanLayout';
 import { TaskBoardHeaderEditor } from './TaskBoardHeaderEditor';
 import { IEditorServices } from '@jupyterlab/codeeditor';
 import { YFile } from '@jupyter/ydoc';
+import { KanbanModel } from '../model';
 import { DocumentRegistry } from '@jupyterlab/docregistry';
 
 /**
@@ -131,7 +132,8 @@ export class TaskBoardPanel extends SidePanel {
     this.addClass('jp-TaskBoard-panel');
     this.trans = translator.load('jupyter-coreseek-kanban');
 
-    // Get shared model from context model
+    // Store the model
+    this._model = model;
     this._sharedModel = (model.sharedModel as YFile);
     
     // Set up shared model change handling
@@ -157,9 +159,9 @@ export class TaskBoardPanel extends SidePanel {
     });
 
     // Initialize shared model with default content if empty
-    if (this._sharedModel.getSource().trim() === '') {
-      this._sharedModel.setSource('# Task Board\n\nThis is the task board description.');
-    }
+    //if (this._sharedModel.getSource().trim() === '') {
+    //  this._sharedModel.setSource('# Task Board\n\nThis is the task board description.');
+    //}
 
     // Set up collaboration awareness
     if (this._sharedModel.awareness) {
@@ -205,7 +207,12 @@ export class TaskBoardPanel extends SidePanel {
       new ToolbarButton({
         icon: addIcon,
         onClick: () => {
-          console.log('Add new task clicked');
+          if (this._model instanceof KanbanModel) {
+            this._model.appendText('hello');
+            console.log('Added hello to the model using appendText');
+          } else {
+            console.warn('Model is not a KanbanModel instance');
+          }
         },
         tooltip: this.trans.__('Add new task')
       })
@@ -236,6 +243,7 @@ export class TaskBoardPanel extends SidePanel {
   protected trans: TranslationBundle;
   private _headerEditor: TaskBoardHeaderEditor;
   private _sharedModel: YFile;
+  private _model: DocumentRegistry.IModel;
 }
 
 /**
