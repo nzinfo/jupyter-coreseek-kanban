@@ -48,8 +48,24 @@ export class KanbanWidget extends DocumentWidget<KanbanLayout, DocumentRegistry.
 
     // Handle context ready
     void context.ready.then(() => {
+      // Update readonly state
+      this._onReadOnlyChanged();
       this._ready.emit();
     });
+
+    // Listen for readonly state changes
+    this._model.readOnlyChanged.connect(this._onReadOnlyChanged, this);
+  }
+
+  private _onReadOnlyChanged(): void {
+    if (this._model.readOnly) {
+      this.title.className += ' jp-mod-readonly';
+    } else {
+      this.title.className = this.title.className.replace(
+        /jp-mod-readonly/g,
+        ''
+      );
+    }
   }
 
   /**
@@ -66,6 +82,7 @@ export class KanbanWidget extends DocumentWidget<KanbanLayout, DocumentRegistry.
     if (this.isDisposed) {
       return;
     }
+    this._model.readOnlyChanged.disconnect(this._onReadOnlyChanged, this);
     this._model.dispose();
     super.dispose();
   }

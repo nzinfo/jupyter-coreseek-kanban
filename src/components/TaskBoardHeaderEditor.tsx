@@ -16,6 +16,7 @@ class CollaborativeEditorModel implements CodeEditor.IModel {
     this._sharedModel = options.sharedModel ?? new YFile();
     this._mimeType = 'text/markdown';
     this._selections = new ObservableMap<CodeEditor.ITextSelection[]>();
+    this._readOnly = false;
 
     // Listen to shared model changes
     this._sharedModel.changed.connect(this._onSharedModelChanged, this);
@@ -49,6 +50,25 @@ class CollaborativeEditorModel implements CodeEditor.IModel {
     return this._sharedModel;
   }
 
+  get readOnly(): boolean {
+    return this._readOnly;
+  }
+  set readOnly(value: boolean) {
+    if (this._readOnly === value) {
+      return;
+    }
+    this._readOnly = value;
+    this._stateChanged.emit({
+      name: 'readOnly',
+      oldValue: !value,
+      newValue: value
+    });
+  }
+
+  get readOnlyChanged(): Signal<this, IChangedArgs<boolean>> {
+    return this._stateChanged;
+  }
+
   private _onSharedModelChanged = (): void => {
     this._mimeTypeChanged.emit({
       name: 'content',
@@ -58,8 +78,10 @@ class CollaborativeEditorModel implements CodeEditor.IModel {
   };
 
   private _mimeType: string;
+  private _readOnly: boolean;
   private _selections: ObservableMap<CodeEditor.ITextSelection[]>;
   private _mimeTypeChanged = new Signal<CodeEditor.IModel, IChangedArgs<string>>(this);
+  private _stateChanged = new Signal<this, IChangedArgs<boolean>>(this);
   private _sharedModel: ISharedText;
 
   dispose(): void {
