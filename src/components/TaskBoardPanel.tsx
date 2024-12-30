@@ -8,8 +8,6 @@ import {
   SidePanel,
   ToolbarButton,
   ToolbarButtonComponent,
-  caretUpEmptyThinIcon,
-  caretDownEmptyThinIcon,
   caretLeftIcon,
   caretRightIcon
 } from '@jupyterlab/ui-components';
@@ -130,37 +128,15 @@ export class TaskBoardPanel extends SidePanel {
     contentPanel.addClass('jp-TaskBoard-section');
     contentPanel.title.label = 'main';
 
-    // Add move up/down and new task buttons to toolbar
+    // Add new task buttons to toolbar
     contentPanel.toolbar.addItem(
-      'moveUp',
-      new ToolbarButton({
-        icon: caretUpEmptyThinIcon,
-        onClick: () => {
-          console.log('Move up clicked');
-        },
-        tooltip: this.trans.__('Move up')
-      })
-    );
-
-    contentPanel.toolbar.addItem(
-      'moveDown',
-      new ToolbarButton({
-        icon: caretDownEmptyThinIcon,
-        onClick: () => {
-          console.log('Move down clicked');
-        },
-        tooltip: this.trans.__('Move down')
-      })
-    );
-
-    contentPanel.toolbar.addItem(
-      'newStage',
+      'newTask',
       new ToolbarButton({
         icon: addIcon,
         onClick: () => {
-          console.log('Add new stage clicked');
+          console.log('Add new task clicked');
         },
-        tooltip: this.trans.__('Add new stage')
+        tooltip: this.trans.__('Add new task')
       })
     );
 
