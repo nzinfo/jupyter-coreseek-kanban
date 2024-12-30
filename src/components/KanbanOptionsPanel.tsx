@@ -1,7 +1,7 @@
 import React from 'react';
 import { ReactWidget } from '@jupyterlab/apputils';
 import { TranslationBundle } from '@jupyterlab/translation';
-import { addIcon, closeIcon, caretUpIcon, caretDownIcon } from '@jupyterlab/ui-components';
+import { addIcon, closeIcon, caretUpIcon, caretDownIcon, checkIcon } from '@jupyterlab/ui-components';
 
 interface IStage {
   name: string;
@@ -62,64 +62,97 @@ export class KanbanOptionsPanel extends ReactWidget {
 
   private _renderStage(stage: IStage, index: number): JSX.Element {
     const isEditing = this._editState?.type === 'stage' && this._editState.index === index;
+    const showActions = !this._editState && !isEditing;
 
     return (
       <div key={index} className="jp-KanbanOptions-stage">
         <div className="jp-KanbanOptions-stage-header">
           {isEditing ? (
-            <input
-              type="text"
-              className="jp-KanbanOptions-edit-input"
-              value={this._editState?.value || ''}
-              onChange={this._handleEditChange}
-              onKeyDown={this._handleEditKeyDown}
-              autoFocus
-            />
+            <>
+              <input
+                type="text"
+                className="jp-KanbanOptions-edit-input"
+                value={this._editState?.value || ''}
+                onChange={this._handleEditChange}
+                onKeyDown={this._handleEditKeyDown}
+                autoFocus
+              />
+              <div className="jp-KanbanOptions-edit-actions">
+                <div className="jp-ToolbarButton jp-Toolbar-item">
+                  <button 
+                    className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
+                    onClick={this._commitEdit}
+                    title={this._trans.__('Confirm')}
+                  >
+                    <checkIcon.react tag="span" className="jp-Icon" />
+                  </button>
+                </div>
+                <div className="jp-ToolbarButton jp-Toolbar-item">
+                  <button 
+                    className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
+                    onClick={() => {
+                      if (this._editState?.isNew) {
+                        this._stages.splice(this._editState.index, 1);
+                      }
+                      this._editState = null;
+                      this.update();
+                    }}
+                    title={this._trans.__('Cancel')}
+                  >
+                    <closeIcon.react tag="span" className="jp-Icon" />
+                  </button>
+                </div>
+              </div>
+            </>
           ) : (
-            <span onDoubleClick={() => this._startEdit('stage', index, stage.name)}>
-              {stage.name}
-            </span>
+            <>
+              <span onDoubleClick={() => this._startEdit('stage', index, stage.name)}>
+                {stage.name}
+              </span>
+              {showActions && (
+                <div className="jp-KanbanOptions-stage-actions">
+                  <div className="jp-ToolbarButton jp-Toolbar-item">
+                    <button 
+                      className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
+                      onClick={() => this._addCategory(stage, index)}
+                      title={this._trans.__('Add Category')}
+                    >
+                      <addIcon.react tag="span" className="jp-Icon" />
+                    </button>
+                  </div>
+                  <div className="jp-ToolbarButton jp-Toolbar-item">
+                    <button 
+                      className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
+                      onClick={() => this._moveStage(index, -1)}
+                      title={this._trans.__('Move Up')}
+                      disabled={index === 0}
+                    >
+                      <caretUpIcon.react tag="span" className="jp-Icon" />
+                    </button>
+                  </div>
+                  <div className="jp-ToolbarButton jp-Toolbar-item">
+                    <button 
+                      className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
+                      onClick={() => this._moveStage(index, 1)}
+                      title={this._trans.__('Move Down')}
+                      disabled={index === this._stages.length - 1}
+                    >
+                      <caretDownIcon.react tag="span" className="jp-Icon" />
+                    </button>
+                  </div>
+                  <div className="jp-ToolbarButton jp-Toolbar-item">
+                    <button 
+                      className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
+                      onClick={() => this._confirmRemoveStage(index)}
+                      title={this._trans.__('Remove Stage')}
+                    >
+                      <closeIcon.react tag="span" className="jp-Icon" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
-          <div className="jp-KanbanOptions-stage-actions">
-            <div className="jp-ToolbarButton jp-Toolbar-item">
-              <button 
-                className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                onClick={() => this._addCategory(stage, index)}
-                title={this._trans.__('Add Category')}
-              >
-                <addIcon.react tag="span" className="jp-Icon" />
-              </button>
-            </div>
-            <div className="jp-ToolbarButton jp-Toolbar-item">
-              <button 
-                className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                onClick={() => this._moveStage(index, -1)}
-                title={this._trans.__('Move Up')}
-                disabled={index === 0}
-              >
-                <caretUpIcon.react tag="span" className="jp-Icon" />
-              </button>
-            </div>
-            <div className="jp-ToolbarButton jp-Toolbar-item">
-              <button 
-                className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                onClick={() => this._moveStage(index, 1)}
-                title={this._trans.__('Move Down')}
-                disabled={index === this._stages.length - 1}
-              >
-                <caretDownIcon.react tag="span" className="jp-Icon" />
-              </button>
-            </div>
-            <div className="jp-ToolbarButton jp-Toolbar-item">
-              <button 
-                className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                onClick={() => this._removeStage(index)}
-                title={this._trans.__('Remove Stage')}
-              >
-                <closeIcon.react tag="span" className="jp-Icon" />
-              </button>
-            </div>
-          </div>
         </div>
         <div className="jp-KanbanOptions-categories">
           {stage.categories.map((category, categoryIndex) => 
@@ -134,54 +167,87 @@ export class KanbanOptionsPanel extends ReactWidget {
     const isEditing = this._editState?.type === 'category' && 
                      this._editState.index === stageIndex && 
                      this._editState.categoryIndex === categoryIndex;
+    const showActions = !this._editState && !isEditing;
 
     return (
       <div key={categoryIndex} className="jp-KanbanOptions-category">
         {isEditing ? (
-          <input
-            type="text"
-            className="jp-KanbanOptions-edit-input"
-            value={this._editState?.value || ''}
-            onChange={this._handleEditChange}
-            onKeyDown={this._handleEditKeyDown}
-            autoFocus
-          />
+          <>
+            <input
+              type="text"
+              className="jp-KanbanOptions-edit-input"
+              value={this._editState?.value || ''}
+              onChange={this._handleEditChange}
+              onKeyDown={this._handleEditKeyDown}
+              autoFocus
+            />
+            <div className="jp-KanbanOptions-edit-actions">
+              <div className="jp-ToolbarButton jp-Toolbar-item">
+                <button 
+                  className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
+                  onClick={this._commitEdit}
+                  title={this._trans.__('Confirm')}
+                >
+                  <checkIcon.react tag="span" className="jp-Icon" />
+                </button>
+              </div>
+              <div className="jp-ToolbarButton jp-Toolbar-item">
+                <button 
+                  className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
+                  onClick={() => {
+                    if (this._editState?.isNew) {
+                      this._stages[stageIndex].categories.splice(categoryIndex, 1);
+                    }
+                    this._editState = null;
+                    this.update();
+                  }}
+                  title={this._trans.__('Cancel')}
+                >
+                  <closeIcon.react tag="span" className="jp-Icon" />
+                </button>
+              </div>
+            </div>
+          </>
         ) : (
-          <span onDoubleClick={() => this._startEdit('category', stageIndex, category.name, categoryIndex)}>
-            {category.name}
-          </span>
+          <>
+            <span onDoubleClick={() => this._startEdit('category', stageIndex, category.name, categoryIndex)}>
+              {category.name}
+            </span>
+            {showActions && (
+              <div className="jp-KanbanOptions-category-actions">
+                <div className="jp-ToolbarButton jp-Toolbar-item">
+                  <button 
+                    className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
+                    onClick={() => this._moveCategory(stageIndex, categoryIndex, -1)}
+                    title={this._trans.__('Move Up')}
+                    disabled={categoryIndex === 0}
+                  >
+                    <caretUpIcon.react tag="span" className="jp-Icon" />
+                  </button>
+                </div>
+                <div className="jp-ToolbarButton jp-Toolbar-item">
+                  <button 
+                    className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
+                    onClick={() => this._moveCategory(stageIndex, categoryIndex, 1)}
+                    title={this._trans.__('Move Down')}
+                    disabled={categoryIndex === this._stages[stageIndex].categories.length - 1}
+                  >
+                    <caretDownIcon.react tag="span" className="jp-Icon" />
+                  </button>
+                </div>
+                <div className="jp-ToolbarButton jp-Toolbar-item">
+                  <button 
+                    className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
+                    onClick={() => this._confirmRemoveCategory(stageIndex, categoryIndex)}
+                    title={this._trans.__('Remove Category')}
+                  >
+                    <closeIcon.react tag="span" className="jp-Icon" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
-        <div className="jp-KanbanOptions-category-actions">
-          <div className="jp-ToolbarButton jp-Toolbar-item">
-            <button 
-              className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-              onClick={() => this._moveCategory(stageIndex, categoryIndex, -1)}
-              title={this._trans.__('Move Up')}
-              disabled={categoryIndex === 0}
-            >
-              <caretUpIcon.react tag="span" className="jp-Icon" />
-            </button>
-          </div>
-          <div className="jp-ToolbarButton jp-Toolbar-item">
-            <button 
-              className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-              onClick={() => this._moveCategory(stageIndex, categoryIndex, 1)}
-              title={this._trans.__('Move Down')}
-              disabled={categoryIndex === this._stages[stageIndex].categories.length - 1}
-            >
-              <caretDownIcon.react tag="span" className="jp-Icon" />
-            </button>
-          </div>
-          <div className="jp-ToolbarButton jp-Toolbar-item">
-            <button 
-              className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-              onClick={() => this._removeCategory(stageIndex, categoryIndex)}
-              title={this._trans.__('Remove Category')}
-            >
-              <closeIcon.react tag="span" className="jp-Icon" />
-            </button>
-          </div>
-        </div>
       </div>
     );
   }
@@ -273,11 +339,6 @@ export class KanbanOptionsPanel extends ReactWidget {
     }
   };
 
-  private _removeStage = (index: number): void => {
-    this._stages.splice(index, 1);
-    this.update();
-  };
-
   private _moveCategory = (stageIndex: number, categoryIndex: number, direction: number): void => {
     const categories = this._stages[stageIndex].categories;
     const newIndex = categoryIndex + direction;
@@ -289,9 +350,18 @@ export class KanbanOptionsPanel extends ReactWidget {
     }
   };
 
-  private _removeCategory = (stageIndex: number, categoryIndex: number): void => {
-    this._stages[stageIndex].categories.splice(categoryIndex, 1);
-    this.update();
+  private _confirmRemoveStage = (index: number): void => {
+    if (confirm(this._trans.__('Are you sure you want to remove this stage? This action cannot be undone.'))) {
+      this._stages.splice(index, 1);
+      this.update();
+    }
+  };
+
+  private _confirmRemoveCategory = (stageIndex: number, categoryIndex: number): void => {
+    if (confirm(this._trans.__('Are you sure you want to remove this category? This action cannot be undone.'))) {
+      this._stages[stageIndex].categories.splice(categoryIndex, 1);
+      this.update();
+    }
   };
 
   // Add a method to create a new stage
