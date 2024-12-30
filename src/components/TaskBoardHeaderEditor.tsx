@@ -16,6 +16,9 @@ class CollaborativeEditorModel implements CodeEditor.IModel {
     this._sharedModel = options.sharedModel ?? new YFile();
     this._mimeType = 'text/markdown';
     this._selections = new ObservableMap<CodeEditor.ITextSelection[]>();
+
+    // Listen to shared model changes
+    this._sharedModel.changed.connect(this._onSharedModelChanged, this);
   }
 
   get mimeTypeChanged(): Signal<CodeEditor.IModel, IChangedArgs<string>> {
@@ -45,6 +48,14 @@ class CollaborativeEditorModel implements CodeEditor.IModel {
   get sharedModel(): ISharedText {
     return this._sharedModel;
   }
+
+  private _onSharedModelChanged = (): void => {
+    this._mimeTypeChanged.emit({
+      name: 'content',
+      oldValue: '',
+      newValue: this._sharedModel.getSource()
+    });
+  };
 
   private _mimeType: string;
   private _selections: ObservableMap<CodeEditor.ITextSelection[]>;
@@ -123,6 +134,10 @@ export class TaskBoardHeaderEditor extends PanelWithToolbar {
     // Add the editor to the panel
     this.addWidget(this._editor);
 
+    // Set up collaboration
+    const sharedModel = this._editorModel.sharedModel;
+    sharedModel.changed.connect(this._onModelChanged, this);
+
     // Initially hide the panel
     this.hide();
   }
@@ -145,7 +160,7 @@ export class TaskBoardHeaderEditor extends PanelWithToolbar {
    * Get the editor content
    */
   getContent(): string {
-    return this._editorModel.sharedModel.toString();
+    return this._editorModel.sharedModel.getSource();
   }
 
   /**
@@ -153,6 +168,37 @@ export class TaskBoardHeaderEditor extends PanelWithToolbar {
    */
   setContent(content: string): void {
     this._editorModel.sharedModel.setSource(content);
+    // Emit change event to trigger updates
+    this._editorModel.mimeTypeChanged.emit({
+      name: 'content',
+      oldValue: '',
+      newValue: content
+    });
+  }
+
+  private _onModelChanged(): void {
+    if (!this._editor) {
+      return;
+    }
+    const editorModel = this._editor.editor.model;
+    const currentSource = editorModel.sharedModel.getSource();
+    const modelSource = this._editorModel.sharedModel.getSource();
+
+    // Only update if sources are different to prevent recursive updates
+    if (currentSource !== modelSource) {
+      console.log('Updating editor content from shared model:', {
+        current: currentSource.slice(0, 50),
+        model: modelSource.slice(0, 50)
+      });
+      editorModel.sharedModel.setSource(modelSource);
+      
+      // Force a model change event
+      this._editorModel.mimeTypeChanged.emit({
+        name: 'content',
+        oldValue: currentSource,
+        newValue: modelSource
+      });
+    }
   }
 
   private _onSave: (() => void) | null = null;

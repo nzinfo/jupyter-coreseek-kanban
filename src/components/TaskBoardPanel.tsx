@@ -132,6 +132,18 @@ export class TaskBoardPanel extends SidePanel {
 
     // Create shared model for collaborative editing
     this._sharedModel = new YFile();
+    
+    // Initialize shared model with default content if empty
+    if (this._sharedModel.getSource().trim() === '') {
+      this._sharedModel.setSource('# Task Board\n\nThis is the task board description.');
+    }
+
+    // Set up shared model change handling
+    this._sharedModel.changed.connect((sender: YFile) => {
+      console.log('Shared model changed:', {
+        content: sender.getSource().slice(0, 50)
+      });
+    });
 
     // Add header editor panel
     this._headerEditor = new TaskBoardHeaderEditor({ 
@@ -139,14 +151,34 @@ export class TaskBoardPanel extends SidePanel {
       editorServices: editorServices,
       sharedModel: this._sharedModel
     });
+
+    // Set up collaboration awareness
+    if (this._sharedModel.awareness) {
+      this._sharedModel.awareness.setLocalStateField('user', {
+        name: 'User ' + Math.floor(Math.random() * 1000),
+        color: '#' + Math.floor(Math.random()*16777215).toString(16)
+      });
+
+      // Listen to awareness changes
+      this._sharedModel.awareness.on('change', () => {
+        const states = Array.from(this._sharedModel.awareness!.getStates().values());
+        console.log('Active users:', states);
+      });
+    }
+
     this._headerEditor.setOnSave(() => {
-      // TODO: Save the content to the markdown file
-      console.log('Content to save:', this._headerEditor.getContent());
+      // Save the content to persistent storage
+      const content = this._headerEditor.getContent();
+      console.log('Saving content:', content);
+      // TODO: Implement actual storage mechanism
       this._headerEditor.hide();
       this._headerEditor.parent = null;
     });
+
     this._headerEditor.setOnRevert(() => {
-      // TODO: Revert the content from the markdown file
+      // Revert changes by reloading from storage
+      console.log('Reverting changes');
+      // TODO: Implement actual storage mechanism
       this._headerEditor.hide();
       this._headerEditor.parent = null;
     });
