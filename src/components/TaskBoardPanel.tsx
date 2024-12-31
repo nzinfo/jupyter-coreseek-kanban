@@ -18,7 +18,7 @@ import { KanbanLayout } from './KanbanLayout';
 import { TaskBoardHeaderEditor } from './TaskBoardHeaderEditor';
 import { IEditorServices } from '@jupyterlab/codeeditor';
 import { YFile } from '@jupyter/ydoc';
-import { KanbanModel } from '../model';
+import { KanbanModel, KanbanSection } from '../model';
 import { DocumentRegistry } from '@jupyterlab/docregistry';
 
 /**
@@ -169,18 +169,45 @@ class TaskBoardHeader extends ReactWidget {
  * Task board content component
  */
 class TaskBoardContent extends Panel {
-  constructor(protected trans: TranslationBundle) {
+  constructor(options: TaskBoardContent.IOptions) {
     super();
     this.addClass('jp-TaskBoard-content');
-    
+    this._trans = options.trans;
+    this._section = options.section || {
+      title: 'main',
+      columns: ['Todo', 'Doing', 'Review', 'Done']
+    };
+    this._createColumns();
+  }
+
+  /**
+   * Set section for the board
+   */
+  setSection(section: KanbanSection) {
+    this._section = section;
+    this._createColumns();
+  }
+
+  /**
+   * Get current section
+   */
+  get section(): KanbanSection {
+    return this._section;
+  }
+
+  private _createColumns(): void {
+    // Remove existing columns
+    const existingContainer = this.node.querySelector('.jp-TaskBoard-columns');
+    if (existingContainer) {
+      existingContainer.remove();
+    }
+
     // Create columns container
     const columnsContainer = document.createElement('div');
     columnsContainer.className = 'jp-TaskBoard-columns';
-    this.node.appendChild(columnsContainer);
-
+    
     // Create columns
-    const columns = ['Todo', 'Doing', 'Review', 'Done'];
-    columns.forEach(columnName => {
+    this._section.columns.forEach(columnName => {
       // Create column container
       const columnContainer = document.createElement('div');
       columnContainer.className = 'jp-TaskBoard-column';
@@ -189,17 +216,42 @@ class TaskBoardContent extends Panel {
       const header = document.createElement('div');
       header.className = 'jp-TaskBoard-columnHeader';
       const title = document.createElement('h3');
-      title.textContent = this.trans.__(columnName);
+      title.textContent = columnName;
       header.appendChild(title);
       columnContainer.appendChild(header);
 
       // Create TaskColumn
-      const column = new TaskColumn(this.trans);
+      const column = new TaskColumn(this._trans);
       columnContainer.appendChild(column.node);
 
       // Add column to container
       columnsContainer.appendChild(columnContainer);
     });
+
+    this.node.appendChild(columnsContainer);
+  }
+
+  private _section: KanbanSection;
+  private _trans: TranslationBundle;
+}
+
+/**
+ * A namespace for TaskBoardContent statics.
+ */
+namespace TaskBoardContent {
+  /**
+   * The options used to create a TaskBoardContent.
+   */
+  export interface IOptions {
+    /**
+     * The translation bundle.
+     */
+    trans: TranslationBundle;
+
+    /**
+     * The section to display.
+     */
+    section?: KanbanSection;
   }
 }
 
@@ -315,8 +367,12 @@ export class TaskBoardPanel extends SidePanel {
         })
       );
 
-      // Add task board content
-      contentPanel.addWidget(new TaskBoardContent(this.trans));
+      // Add task board content with section from model
+      const content = new TaskBoardContent({
+        trans: this.trans,
+        section: section
+      });
+      contentPanel.addWidget(content);
       this.addWidget(contentPanel);
       
       // Store panel reference
@@ -324,6 +380,7 @@ export class TaskBoardPanel extends SidePanel {
     });
 
     // If no sections, create a default one
+    /*  // 如果 no sections, 暂时不显示任何。
     if (this._sectionPanels.length === 0) {
       const defaultPanel = new PanelWithToolbar();
       defaultPanel.addClass('jp-TaskBoard-section');
@@ -343,13 +400,17 @@ export class TaskBoardPanel extends SidePanel {
         })
       );
 
-      // Add task board content
-      defaultPanel.addWidget(new TaskBoardContent(this.trans));
+      // Add task board content with default section
+      const content = new TaskBoardContent({
+        trans: this.trans
+      });
+      defaultPanel.addWidget(content);
       this.addWidget(defaultPanel);
       
       // Store panel reference
       this._sectionPanels.push(defaultPanel);
     }
+    */
   }
 
   protected trans: TranslationBundle;
