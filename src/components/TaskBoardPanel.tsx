@@ -18,7 +18,7 @@ import { KanbanLayout } from './KanbanLayout';
 import { TaskBoardHeaderEditor } from './TaskBoardHeaderEditor';
 import { IEditorServices } from '@jupyterlab/codeeditor';
 import { YFile } from '@jupyter/ydoc';
-// import { KanbanModel } from '../model';
+import { KanbanModel } from '../model';
 import { DocumentRegistry } from '@jupyterlab/docregistry';
 
 /**
@@ -31,6 +31,12 @@ class TaskBoardHeader extends ReactWidget {
     this._tasklistVisible = true;
     this._editState = null;
     this._inputRef = React.createRef<HTMLInputElement>();
+    this._title = this.trans.__('Task Board');
+  }
+
+  setTitle(title: string) {
+    this._title = title;
+    this.update();
   }
 
   componentDidUpdate() {
@@ -66,7 +72,7 @@ class TaskBoardHeader extends ReactWidget {
           </div>
         ) : (
           <div className="jp-TaskBoard-title">
-            <h2 onClick={this._onClick}>{this.trans.__('Task Board')}</h2>
+            <h2 onClick={this._onClick}>{this._title}</h2>
 
           </div>
         )}
@@ -95,7 +101,7 @@ class TaskBoardHeader extends ReactWidget {
  
   private _startEdit = () => {
     this._editState = {
-      value: this.trans.__('Task Board')
+      value: this._title
     };
     this.update();
   };
@@ -156,6 +162,7 @@ class TaskBoardHeader extends ReactWidget {
   private _onHeaderClick: (() => void) | null = null;
   private _editState: { value: string } | null;
   private _inputRef: React.RefObject<HTMLInputElement>;
+  private _title: string;
 }
 
 /**
@@ -208,22 +215,12 @@ export class TaskBoardPanel extends SidePanel {
     this.trans = translator.load('jupyter-coreseek-kanban');
 
     // Store the model
-    // this._model = model;
+    this._model = model as KanbanModel;
     this._sharedModel = (model.sharedModel as YFile);
     
     // Set up shared model change handling
-    this._sharedModel.changed.connect((sender: YFile) => {
-      console.log('Shared model changed in TaskBoardPanel:', {
-        content: sender.getSource().slice(0, 50)
-      });
-      // 如果编辑器是打开的，更新其内容
-      if (this._headerEditor.isVisible) {
-        const currentContent = this._headerEditor.getContent();
-        const modelContent = sender.getSource();
-        if (currentContent !== modelContent) {
-          this._headerEditor.setContent(modelContent);
-        }
-      }
+    this._model.changed.connect(() => {
+      this._updateFromModel();
     });
 
     // Add header editor panel with the shared model
@@ -233,20 +230,8 @@ export class TaskBoardPanel extends SidePanel {
       sharedModel: this._sharedModel
     });
 
-    // Initialize shared model with default content if empty
-    //if (this._sharedModel.getSource().trim() === '') {
-    //  this._sharedModel.setSource('# Task Board\n\nThis is the task board description.');
-    //}
-
     // Set up collaboration awareness
     if (this._sharedModel.awareness) {
-      /*
-      this._sharedModel.awareness.setLocalStateField('user', {
-        name: 'User ' + Math.floor(Math.random() * 1000),
-        color: '#' + Math.floor(Math.random()*16777215).toString(16)
-      });
-      */
-      // Listen to awareness changes
       this._sharedModel.awareness.on('change', () => {
         const states = Array.from(this._sharedModel.awareness!.getStates().values());
         console.log('Active users:', states);
@@ -254,15 +239,14 @@ export class TaskBoardPanel extends SidePanel {
     }
 
     // Add header
-    const header = new TaskBoardHeader(this.trans);
-    header.setTasklistToggleCallback((visible) => {
+    this._task_header = new TaskBoardHeader(this.trans);
+    this._task_header.setTasklistToggleCallback((visible) => {
       const parent = this.parent;
       if (parent && parent instanceof KanbanLayout) {
         parent.toggleTaskList(visible);
       }
     });
-    header.setHeaderClickCallback(() => {
-      // 获取当前 model 的内容
+    this._task_header.setHeaderClickCallback(() => {
       const currentContent = this._sharedModel.getSource();
       console.log('Current model content:', currentContent);
 
@@ -270,30 +254,10 @@ export class TaskBoardPanel extends SidePanel {
       this._headerEditor.setContent(currentContent);
       this._headerEditor.show();
     });
-    this.header.addWidget(header);
+    this.header.addWidget(this._task_header);
 
-    // Add main content panel with toolbar
-    const contentPanel = new PanelWithToolbar();
-    contentPanel.addClass('jp-TaskBoard-section');
-    contentPanel.title.label = 'main';
-
-    // Add new task buttons to toolbar
-    contentPanel.toolbar.addItem(
-      'newTask',
-      new ToolbarButton({
-        icon: addIcon,
-        onClick: () => {
-          const currentContent = this._sharedModel.getSource();
-          this._sharedModel.setSource(currentContent + '\nhello');
-          console.log('Added hello to the model');
-        },
-        tooltip: this.trans.__('Add new task')
-      })
-    );
-
-    // Add task board content
-    contentPanel.addWidget(new TaskBoardContent(this.trans));
-    this.addWidget(contentPanel);
+    // Initial update from model
+    this._updateFromModel();
 
     // Set up save and revert handlers
     this._headerEditor.setOnSave(() => {
@@ -313,10 +277,87 @@ export class TaskBoardPanel extends SidePanel {
     });
   }
 
+  private _updateFromModel(): void {
+    const structure = this._model.structure;
+    if (!structure) {
+      return;
+    }
+
+    // Update title
+    this._task_header.setTitle(structure.title || this.trans.__('Task Board'));
+
+    // Remove all content panels
+    const widgets = [...this.widgets];
+    widgets.forEach(widget => {
+      if (widget instanceof PanelWithToolbar) {
+        widget.dispose();
+      }
+    });
+    this._sectionPanels = [];
+
+    // Create sections
+    structure.sections.forEach(section => {
+      const contentPanel = new PanelWithToolbar();
+      contentPanel.addClass('jp-TaskBoard-section');
+      contentPanel.title.label = section.title;
+
+      // Add new task button to toolbar
+      contentPanel.toolbar.addItem(
+        'newTask',
+        new ToolbarButton({
+          icon: addIcon,
+          onClick: () => {
+            const currentContent = this._sharedModel.getSource();
+            this._sharedModel.setSource(currentContent + '\n- New task');
+            console.log('Added new task to the model');
+          },
+          tooltip: this.trans.__('Add new task')
+        })
+      );
+
+      // Add task board content
+      contentPanel.addWidget(new TaskBoardContent(this.trans));
+      this.addWidget(contentPanel);
+      
+      // Store panel reference
+      this._sectionPanels.push(contentPanel);
+    });
+
+    // If no sections, create a default one
+    if (this._sectionPanels.length === 0) {
+      const defaultPanel = new PanelWithToolbar();
+      defaultPanel.addClass('jp-TaskBoard-section');
+      defaultPanel.title.label = 'main';
+
+      // Add new task button to toolbar
+      defaultPanel.toolbar.addItem(
+        'newTask',
+        new ToolbarButton({
+          icon: addIcon,
+          onClick: () => {
+            const currentContent = this._sharedModel.getSource();
+            this._sharedModel.setSource(currentContent + '\n- New task');
+            console.log('Added new task to the model');
+          },
+          tooltip: this.trans.__('Add new task')
+        })
+      );
+
+      // Add task board content
+      defaultPanel.addWidget(new TaskBoardContent(this.trans));
+      this.addWidget(defaultPanel);
+      
+      // Store panel reference
+      this._sectionPanels.push(defaultPanel);
+    }
+  }
+
   protected trans: TranslationBundle;
   private _headerEditor: TaskBoardHeaderEditor;
   private _sharedModel: YFile;
-  // private _model: DocumentRegistry.IModel;
+  private _model: KanbanModel;
+  private _task_header: TaskBoardHeader;
+  private _sectionPanels: PanelWithToolbar[] = [];
 }
 
 /**
