@@ -9,7 +9,8 @@ import {
   ToolbarButton,
   ToolbarButtonComponent,
   caretLeftIcon,
-  caretRightIcon
+  caretRightIcon,
+  editIcon
 } from '@jupyterlab/ui-components';
 import { TaskColumn } from './TaskListPanel';
 import { Panel } from '@lumino/widgets';
@@ -28,6 +29,7 @@ class TaskBoardHeader extends ReactWidget {
     super();
     this.addClass('jp-TaskBoard-header');
     this._tasklistVisible = true;
+    this._editState = null;
   }
 
   render(): JSX.Element {
@@ -40,8 +42,31 @@ class TaskBoardHeader extends ReactWidget {
           caseSensitive={false}
           disabled={false}
         />
-        <h2 onClick={this._onClick}>{this.trans.__('Task Board')}</h2>
+        {this._editState ? (
+          <div className="jp-TaskBoard-title-edit">
+            <input
+              type="text"
+              className="jp-KanbanOptions-edit-input"
+              value={this._editState.value}
+              onChange={this._handleEditChange}
+              onKeyDown={this._handleEditKeyDown}
+              onBlur={this._commitEdit}
+              autoFocus
+            />
+          </div>
+        ) : (
+          <div className="jp-TaskBoard-title">
+            <h2 onClick={this._onClick}>{this.trans.__('Task Board')}</h2>
+
+          </div>
+        )}
         <div className="jp-TaskBoard-headerButtons">
+          <ToolbarButtonComponent
+              icon={editIcon}
+              onClick={() => this._onHeaderClick?.()}
+              tooltip={this.trans.__('Edit in full editor')}
+              className="jp-TaskBoard-editButton"
+          />
           <ToolbarButtonComponent
             icon={this._tasklistVisible ? caretRightIcon : caretLeftIcon}
             onClick={() => {
@@ -57,30 +82,69 @@ class TaskBoardHeader extends ReactWidget {
       </>
     );
   }
+ 
+  private _startEdit = () => {
+    this._editState = {
+      value: this.trans.__('Task Board')
+    };
+    this.update();
+  };
 
-  /**
-   * Set the callback for tasklist visibility toggle
-   */
+  private _handleEditChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    if (this._editState) {
+      this._editState = {
+        ...this._editState,
+        value: event.target.value
+      };
+      this.update();
+    }
+  };
+
+  private _handleEditKeyDown = (event: React.KeyboardEvent<HTMLInputElement>): void => {
+    if (event.key === 'Enter') {
+      this._commitEdit();
+    } else if (event.key === 'Escape') {
+      this._editState = null;
+      this.update();
+    }
+  };
+
+  private _commitEdit = (): void => {
+    if (!this._editState || !this._editState.value.trim()) {
+      this._editState = null;
+      this.update();
+      return;
+    }
+
+    // TODO: Implement actual title change logic here
+    console.log('New title:', this._editState.value.trim());
+    
+    this._editState = null;
+    this.update();
+  };
+
+  private _onClick = (event: React.MouseEvent) => {
+    if (event.ctrlKey && this._onHeaderClick) {
+      // Ctrl+单击打开编辑器
+      this._onHeaderClick();
+    } else {
+      // 普通单击启动改名
+      this._startEdit();
+    }
+  };
+
   setTasklistToggleCallback(callback: (visible: boolean) => void): void {
     this._onTasklistToggle = callback;
   }
 
-  /**
-   * Set the callback for header click
-   */
   setHeaderClickCallback(callback: () => void): void {
     this._onHeaderClick = callback;
   }
 
-  private _onClick = () => {
-    if (this._onHeaderClick) {
-      this._onHeaderClick();
-    }
-  };
-
   private _tasklistVisible: boolean;
   private _onTasklistToggle: ((visible: boolean) => void) | null = null;
   private _onHeaderClick: (() => void) | null = null;
+  private _editState: { value: string } | null;
 }
 
 /**

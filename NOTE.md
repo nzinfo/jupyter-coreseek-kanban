@@ -200,12 +200,6 @@ Model 通过 接口函数 完成 默认 Task 文件的构建
 
 # 界面原型
 
-1. 界面整体分二部分
-
-   - 右边部分，类似 Running Terminals And Kernels
-      - 顶部为工具栏，最右侧为按钮 ...
-      - 点击按钮 '...' 弹出菜单
-
 2. Task 表现为 Card 的形态
 
    - Task 已经通过的 Stage 会自动增加 Tag 

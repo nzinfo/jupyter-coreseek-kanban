@@ -63,10 +63,6 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
     this._sharedModel = options.sharedModel ?? new YFile();
     // Connect to the shared model's changed event
     this._sharedModel.changed.connect(this._onSharedModelChanged, this);
-    // Initialize with default content if empty
-    if (this._sharedModel.getSource().trim() === '') {
-      this._sharedModel.setSource('# Task Board\n\nThis is the task board description.');
-    }
   }
 
   get changed(): Signal<this, IChangedArgs<string>> {
