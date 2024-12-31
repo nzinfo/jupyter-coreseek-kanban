@@ -117,6 +117,34 @@
   overflow-y: auto;
 }
 
+/* Task card styles */
+.jp-TaskCard {
+  background: var(--jp-layout-color1);
+  border: 1px solid var(--jp-border-color2);
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.1s ease-in-out;
+}
+
+/* Add drag styles */
+.jp-TaskCard[draggable=true] {
+  cursor: grab;
+}
+
+.jp-TaskCard[draggable=true]:active {
+  cursor: grabbing;
+}
+
+/* Style for the card being dragged */
+.jp-TaskCard-dragging {
+  opacity: 0.5;
+  transform: scale(1.02);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
 /* Task board header editor */
 .jp-TaskBoard-headerEditor {
   display: none;

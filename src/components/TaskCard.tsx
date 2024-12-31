@@ -109,10 +109,31 @@ export class TaskCard extends Widget {
     event.dataTransfer?.setData('application/x-taskcard', 'true');
     DragDropManager.dragSource = this;
     event.dataTransfer!.effectAllowed = 'move';
+
+    // Create an empty, transparent drag image
+    const dragImage = document.createElement('div');
+    dragImage.style.width = '1px';
+    dragImage.style.height = '1px';
+    dragImage.style.background = 'transparent';
+    dragImage.style.position = 'fixed';
+    dragImage.style.top = '-100px';
+    document.body.appendChild(dragImage);
+
+    // Set the empty drag image
+    event.dataTransfer?.setDragImage(dragImage, 0, 0);
+
+    // Add visual feedback to the original card
+    this.addClass('jp-TaskCard-dragging');
+
+    // Clean up
+    setTimeout(() => {
+      document.body.removeChild(dragImage);
+    }, 0);
   }
 
   private handleDragEnd(event: DragEvent): void {
     event.stopPropagation();
     DragDropManager.dragSource = null;
+    this.removeClass('jp-TaskCard-dragging');
   }
 } 
