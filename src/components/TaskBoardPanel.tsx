@@ -202,7 +202,7 @@ class TaskBoardContent extends Panel {
     this._section.columns.forEach(column => {
       // Create column container
       const columnContainer = document.createElement('div');
-      columnContainer.className = 'jp-TaskBoard-columnContainer';
+      columnContainer.className = 'jp-TaskBoard-column';
 
       // Create column header
       const header = document.createElement('div');
