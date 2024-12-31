@@ -46,6 +46,15 @@ export class KanbanOptionsPanel extends ReactWidget {
     ];
 
     this._editState = null;
+    this._inputRef = React.createRef<HTMLInputElement>();
+  }
+
+  componentDidUpdate() {
+    if (this._editState && this._inputRef.current) {
+      if (this._inputRef.current.value !== this._editState.value) {
+        this._inputRef.current.value = this._editState.value;
+      }
+    }
   }
 
   protected render(): React.ReactElement<any> {
@@ -70,9 +79,10 @@ export class KanbanOptionsPanel extends ReactWidget {
           {isEditing ? (
             <>
               <input
+                ref={this._inputRef}
                 type="text"
                 className="jp-KanbanOptions-edit-input"
-                value={this._editState?.value || ''}
+                defaultValue={this._editState?.value || ''}
                 onChange={this._handleEditChange}
                 onKeyDown={this._handleEditKeyDown}
                 autoFocus
@@ -174,9 +184,10 @@ export class KanbanOptionsPanel extends ReactWidget {
         {isEditing ? (
           <>
             <input
+              ref={this._inputRef}
               type="text"
               className="jp-KanbanOptions-edit-input"
-              value={this._editState?.value || ''}
+              defaultValue={this._editState?.value || ''}
               onChange={this._handleEditChange}
               onKeyDown={this._handleEditKeyDown}
               autoFocus
@@ -270,10 +281,10 @@ export class KanbanOptionsPanel extends ReactWidget {
   };
 
   private _handleEditChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-    if (this._editState) {
+    if (this._editState && this._inputRef.current) {
       this._editState = {
         ...this._editState,
-        value: event.target.value
+        value: this._inputRef.current.value
       };
       this.update();
     }
@@ -296,7 +307,7 @@ export class KanbanOptionsPanel extends ReactWidget {
   };
 
   private _commitEdit = (): void => {
-    if (!this._editState || !this._editState.value.trim()) {
+    if (!this._editState || !this._inputRef.current || !this._inputRef.current.value.trim()) {
       if (this._editState?.isNew) {
         if (this._editState.type === 'stage') {
           this._stages.splice(this._editState.index, 1);
@@ -309,12 +320,13 @@ export class KanbanOptionsPanel extends ReactWidget {
       return;
     }
 
-    const { type, index, categoryIndex, value } = this._editState;
+    const { type, index, categoryIndex } = this._editState;
+    const value = this._inputRef.current.value.trim();
 
     if (type === 'stage') {
-      this._stages[index].name = value.trim();
+      this._stages[index].name = value;
     } else if (type === 'category') {
-      this._stages[index].categories[categoryIndex!].name = value.trim();
+      this._stages[index].categories[categoryIndex!].name = value;
     }
 
     this._editState = null;
@@ -376,5 +388,6 @@ export class KanbanOptionsPanel extends ReactWidget {
 
   private _stages: IStage[];
   private _editState: IEditState | null;
+  private _inputRef: React.RefObject<HTMLInputElement>;
   private readonly _trans: TranslationBundle;
 }

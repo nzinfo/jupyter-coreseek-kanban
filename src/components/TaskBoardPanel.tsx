@@ -30,6 +30,15 @@ class TaskBoardHeader extends ReactWidget {
     this.addClass('jp-TaskBoard-header');
     this._tasklistVisible = true;
     this._editState = null;
+    this._inputRef = React.createRef<HTMLInputElement>();
+  }
+
+  componentDidUpdate() {
+    if (this._editState && this._inputRef.current) {
+      if (this._inputRef.current.value !== this._editState.value) {
+        this._inputRef.current.value = this._editState.value;
+      }
+    }
   }
 
   render(): JSX.Element {
@@ -45,9 +54,10 @@ class TaskBoardHeader extends ReactWidget {
         {this._editState ? (
           <div className="jp-TaskBoard-title-edit">
             <input
+              ref={this._inputRef}
               type="text"
               className="jp-KanbanOptions-edit-input"
-              value={this._editState.value}
+              defaultValue={this._editState.value}
               onChange={this._handleEditChange}
               onKeyDown={this._handleEditKeyDown}
               onBlur={this._commitEdit}
@@ -91,10 +101,10 @@ class TaskBoardHeader extends ReactWidget {
   };
 
   private _handleEditChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-    if (this._editState) {
+    if (this._editState && this._inputRef.current) {
       this._editState = {
         ...this._editState,
-        value: event.target.value
+        value: this._inputRef.current.value
       };
       this.update();
     }
@@ -110,14 +120,14 @@ class TaskBoardHeader extends ReactWidget {
   };
 
   private _commitEdit = (): void => {
-    if (!this._editState || !this._editState.value.trim()) {
+    if (!this._editState || !this._inputRef.current || !this._inputRef.current.value.trim()) {
       this._editState = null;
       this.update();
       return;
     }
 
     // TODO: Implement actual title change logic here
-    console.log('New title:', this._editState.value.trim());
+    console.log('New title:', this._inputRef.current.value.trim());
     
     this._editState = null;
     this.update();
@@ -145,6 +155,7 @@ class TaskBoardHeader extends ReactWidget {
   private _onTasklistToggle: ((visible: boolean) => void) | null = null;
   private _onHeaderClick: (() => void) | null = null;
   private _editState: { value: string } | null;
+  private _inputRef: React.RefObject<HTMLInputElement>;
 }
 
 /**
