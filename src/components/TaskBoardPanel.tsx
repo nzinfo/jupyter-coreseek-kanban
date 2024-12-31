@@ -267,6 +267,17 @@ export class TaskBoardPanel extends SidePanel {
       this._updateFromModel();
     });
 
+    this._sharedModel.changed.connect((sender: YFile) => {
+      // 如果编辑器是打开的，更新其内容
+      if (this._headerEditor.isVisible) {
+        const currentContent = this._headerEditor.getContent();
+        const modelContent = sender.getSource();
+        if (currentContent !== modelContent) {
+          this._headerEditor.setContent(modelContent);
+        }
+      }
+    });
+
     // Add header editor panel with the shared model
     this._headerEditor = new TaskBoardHeaderEditor({ 
       trans: this.trans,
