@@ -1,17 +1,17 @@
 import { TranslationBundle } from '@jupyterlab/translation';
-
 import { Panel } from '@lumino/widgets';
-// import { Drag } from '@lumino/dragdrop';
 import { TaskCard } from './TaskCard';
 import { DragDropManager } from './dragdrop';
+import { KanbanColumn, KanbanTask } from '../model';
 
 /**
  * Task column component showing tasks in a specific status
  */
 export class TaskColumn extends Panel {
-  constructor(trans: TranslationBundle, addExampleTasks: boolean = false) {
+  constructor(trans: TranslationBundle, column?: KanbanColumn) {
     super();
     this.addClass('jp-TaskColumn');
+    this._column = column || null;
 
     // 启用拖放
     this.node.addEventListener('dragenter', this);
@@ -25,33 +25,30 @@ export class TaskColumn extends Panel {
     this._dropIndicator.style.display = 'none';
     this.node.appendChild(this._dropIndicator);
 
-    // 根据参数决定是否添加示例任务卡片
-    if (addExampleTasks) {
-      this._addExampleTasks();
-    }
+    // 创建初始任务
+    this._createContent();
   }
 
-  private _addExampleTasks(): void {
-    const tasks = [
-      {
-        title: '实现看板功能',
-        summary: '在 Jupyter 中实现类似 Trello 的看板功能',
-        tags: [
-          { name: '开发中', color: '#61BD4F' },
-          { name: '前端', color: '#FF78CB' }
-        ],
-        assignee: {
-          name: '张',
-          avatarUrl: ''
-        }
-      }
-    ];
+  /**
+   * Set column data
+   */
+  setColumn(column: KanbanColumn) {
+    this._column = column;
+    this._createContent();
+  }
 
-    // 添加任务卡片
-    tasks.forEach(task => {
-      const taskCard = new TaskCard(task);
-      this.addWidget(taskCard);
-    });
+  /**
+   * Get current column
+   */
+  get column(): KanbanColumn | null {
+    return this._column;
+  }
+
+  /**
+   * Set callback for task moved event
+   */
+  setTaskMovedCallback(callback: (task: KanbanTask, column: KanbanColumn) => void) {
+    this._onTaskMoved = callback;
   }
 
   /**
@@ -121,9 +118,27 @@ export class TaskColumn extends Panel {
         // 在指示器位置插入卡片
         const insertIndex = this._getInsertIndex(event.clientY);
         this.insertWidget(insertIndex, source);
+
+        // 通知任务移动
+        if (this._onTaskMoved && this._column) {
+          this._onTaskMoved(source.task, this._column);
+        }
       }
       
       DragDropManager.dragSource = null;
+    }
+  }
+
+  private _createContent(): void {
+    // Clear existing content
+    this.widgets.forEach(widget => widget.dispose());
+
+    // Create tasks
+    if (this._column) {
+      this._column.tasks.forEach(task => {
+        const card = new TaskCard({ task });
+        this.addWidget(card);
+      });
     }
   }
 
@@ -171,4 +186,6 @@ export class TaskColumn extends Panel {
   }
 
   private _dropIndicator: HTMLDivElement;
+  private _column: KanbanColumn | null = null;
+  private _onTaskMoved: ((task: KanbanTask, column: KanbanColumn) => void) | null = null;
 }

@@ -12,13 +12,13 @@ import {
   caretRightIcon,
   editIcon
 } from '@jupyterlab/ui-components';
-import { TaskColumn } from './TaskListPanel';
+import { TaskColumn } from './TaskColumn';
 import { Panel } from '@lumino/widgets';
 import { KanbanLayout } from './KanbanLayout';
 import { TaskBoardHeaderEditor } from './TaskBoardHeaderEditor';
 import { IEditorServices } from '@jupyterlab/codeeditor';
 import { YFile } from '@jupyter/ydoc';
-import { KanbanModel, KanbanSection, KanbanColumn } from '../model';
+import { KanbanModel, KanbanSection } from '../model';
 import { DocumentRegistry } from '@jupyterlab/docregistry';
 
 /**
@@ -213,10 +213,7 @@ class TaskBoardContent extends Panel {
       columnContainer.appendChild(header);
 
       // Create TaskColumn
-      const columnWidget = new TaskColumn({
-        trans: this._trans,
-        column: column
-      });
+      const columnWidget = new TaskColumn(this._trans, column);
       columnContainer.appendChild(columnWidget.node);
 
       // Add column to container

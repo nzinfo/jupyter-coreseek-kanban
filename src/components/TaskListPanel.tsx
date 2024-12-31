@@ -74,7 +74,12 @@ export class TaskListPanel extends SidePanel {
       })
     );
     
-    this._backlogColumn = new TaskColumn(this.trans, true);
+    // Create backlog column
+    this._backlogColumn = new TaskColumn(this.trans, {
+      title: 'Backlog',
+      tasks: []
+    });
+
     backlogPanel.addWidget(this._backlogColumn);
     this._backlogPanel = backlogPanel;
 
@@ -83,7 +88,10 @@ export class TaskListPanel extends SidePanel {
     donePanel.addClass('jp-TaskList-section');
     donePanel.title.label = this.trans.__('Done');
     
-    this._doneColumn = new TaskColumn(this.trans);
+    this._doneColumn = new TaskColumn(this.trans, {
+      title: 'Done',
+      tasks: []
+    });
     donePanel.addWidget(this._doneColumn);
     this._donePanel = donePanel;
 
