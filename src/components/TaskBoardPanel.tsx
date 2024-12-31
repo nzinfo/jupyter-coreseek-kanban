@@ -18,7 +18,7 @@ import { KanbanLayout } from './KanbanLayout';
 import { TaskBoardHeaderEditor } from './TaskBoardHeaderEditor';
 import { IEditorServices } from '@jupyterlab/codeeditor';
 import { YFile } from '@jupyter/ydoc';
-import { KanbanModel, KanbanSection } from '../model';
+import { KanbanModel, KanbanSection, KanbanColumn } from '../model';
 import { DocumentRegistry } from '@jupyterlab/docregistry';
 
 /**
@@ -175,13 +175,13 @@ class TaskBoardContent extends Panel {
     this._trans = options.trans;
     this._section = options.section || {
       title: 'main',
-      columns: ['Todo', 'Doing', 'Review', 'Done']
+      columns: []
     };
     this._createColumns();
   }
 
   /**
-   * Set section for the board
+   * Set section data
    */
   setSection(section: KanbanSection) {
     this._section = section;
@@ -189,40 +189,35 @@ class TaskBoardContent extends Panel {
   }
 
   /**
-   * Get current section
+   * Create the columns
    */
-  get section(): KanbanSection {
-    return this._section;
-  }
-
   private _createColumns(): void {
-    // Remove existing columns
-    const existingContainer = this.node.querySelector('.jp-TaskBoard-columns');
-    if (existingContainer) {
-      existingContainer.remove();
-    }
+    // Clear existing content
+    this.node.textContent = '';
 
     // Create columns container
     const columnsContainer = document.createElement('div');
     columnsContainer.className = 'jp-TaskBoard-columns';
-    
-    // Create columns
-    this._section.columns.forEach(columnName => {
+
+    this._section.columns.forEach(column => {
       // Create column container
       const columnContainer = document.createElement('div');
-      columnContainer.className = 'jp-TaskBoard-column';
+      columnContainer.className = 'jp-TaskBoard-columnContainer';
 
       // Create column header
       const header = document.createElement('div');
       header.className = 'jp-TaskBoard-columnHeader';
       const title = document.createElement('h3');
-      title.textContent = columnName;
+      title.textContent = this._trans.__(column.title);
       header.appendChild(title);
       columnContainer.appendChild(header);
 
       // Create TaskColumn
-      const column = new TaskColumn(this._trans);
-      columnContainer.appendChild(column.node);
+      const columnWidget = new TaskColumn({
+        trans: this._trans,
+        column: column
+      });
+      columnContainer.appendChild(columnWidget.node);
 
       // Add column to container
       columnsContainer.appendChild(columnContainer);
@@ -231,8 +226,8 @@ class TaskBoardContent extends Panel {
     this.node.appendChild(columnsContainer);
   }
 
-  private _section: KanbanSection;
   private _trans: TranslationBundle;
+  private _section: KanbanSection;
 }
 
 /**
@@ -249,7 +244,7 @@ namespace TaskBoardContent {
     trans: TranslationBundle;
 
     /**
-     * The section to display.
+     * The section data
      */
     section?: KanbanSection;
   }

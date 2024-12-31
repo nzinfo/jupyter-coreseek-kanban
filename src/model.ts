@@ -52,13 +52,17 @@ export namespace Kanban {
 export interface KanbanHeading {
   level: number;
   text: string;
-  line: number;
+  lineStart: number;
+}
+
+export interface KanbanColumn {
+  title: string;
+  tasks: KanbanTask[];
 }
 
 export interface KanbanSection {
   title: string;
-  columns: string[];
-  tasks: KanbanTask[];
+  columns: KanbanColumn[];
 }
 
 export interface KanbanStructure {
@@ -103,27 +107,15 @@ export interface KanbanTask {
  * Parse task text to task object
  */
 export function parseTaskText(text: string): KanbanTask {
-  const lines = text.trim().split('\n');
-  const firstLine = lines[0];
-  
-  // Check if first line starts with ### or ####
-  if (!firstLine.startsWith('### ') && !firstLine.startsWith('#### ')) {
-    throw new Error('Task text must start with ### or ####');
-  }
-
   const task: KanbanTask = {
-    title: firstLine.replace(/^#{3,4}\s+/, ''), // Remove ### or #### prefix
+    title: text,
     description: '',
     tags: []
   };
 
-  // Get remaining text
-  const remainingText = lines.slice(1).join('\n');
-
   // Find all markdown links: [text](url)
   const linkPattern = /\[(.*?)\]\((.*?)\)/g;
-  const links = Array.from(remainingText.matchAll(linkPattern));
-  let descriptionText = remainingText;
+  const links = Array.from(text.matchAll(linkPattern));
 
   links.forEach(link => {
     const [fullMatch, text, url] = link;
@@ -143,14 +135,18 @@ export function parseTaskText(text: string): KanbanTask {
       };
     }
 
-    // Remove the link from description text
-    descriptionText = descriptionText.replace(fullMatch, '').trim();
+    // Remove the link from title
+    task.title = task.title.replace(fullMatch, '').trim();
   });
 
-  // Set description (first 50 chars)
-  task.description = descriptionText.substring(0, 50).trim();
-  if (descriptionText.length > 50) {
-    task.description += '...';
+  // Split remaining text into title and description
+  const lines = task.title.split('\n');
+  if (lines[0].startsWith('### ') || lines[0].startsWith('#### ')) {
+    task.title = lines[0].replace(/^#{3,4}\s+/, '').trim();
+    task.description = lines.slice(1).join('\n').trim();
+    if (task.description.length > 50) {
+      task.description = task.description.substring(0, 50) + '...';
+    }
   }
 
   return task;
@@ -216,7 +212,7 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
         headings.push({
           level: match[1].length,
           text: match[2].trim(),
-          line: index
+          lineStart: index
         });
       }
     });
@@ -240,11 +236,14 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
 
     // 处理其他一级标题作为分组，其下的二级标题作为列
     let currentSection: KanbanSection | null = null;
+    let currentColumn: KanbanColumn | null = null;
 
-    headings.forEach((heading, index) => {
+    for (let i = 0; i < headings.length; i++) {
+      const heading = headings[i];
+      
       // 跳过第一个一级标题（已作为看板标题）
       if (heading === firstH1) {
-        return;
+        continue;
       }
 
       if (heading.level === 1) {
@@ -253,13 +252,25 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
         }
         currentSection = {
           title: heading.text,
-          columns: [],
+          columns: []
+        };
+        currentColumn = null;
+      } else if (heading.level === 2 && currentSection) {
+        currentColumn = {
+          title: heading.text,
           tasks: []
         };
-      } else if (heading.level === 2 && currentSection) {
-        currentSection.columns.push(heading.text);
+        currentSection.columns.push(currentColumn);
+      } else if ((heading.level === 3 || heading.level === 4) && currentSection && currentColumn) {
+        // 计算任务文本的范围
+        const taskEndLine = headings[i + 1] ? headings[i + 1].lineStart : lines.length;
+        const taskText = lines.slice(heading.lineStart, taskEndLine).join('\n');
+        
+        // 解析任务
+        const task = parseTaskText(taskText);
+        currentColumn.tasks.push(task);
       }
-    });
+    }
 
     // 添加最后一个分组
     if (currentSection) {
