@@ -58,11 +58,102 @@ export interface KanbanHeading {
 export interface KanbanSection {
   title: string;
   columns: string[];
+  tasks: KanbanTask[];
 }
 
 export interface KanbanStructure {
   title: string;
   sections: KanbanSection[];
+}
+
+/**
+ * Task interface
+ */
+export interface KanbanTask {
+  /**
+   * Task title (from first line, starting with ### or ####)
+   */
+  title: string;
+
+  /**
+   * Task description (first 50 chars from remaining text, excluding links)
+   */
+  description: string;
+
+  /**
+   * Optional detail file name
+   */
+  detailFile?: string;
+
+  /**
+   * Task tags
+   */
+  tags: string[];
+
+  /**
+   * Assigned user
+   */
+  assignee?: {
+    name: string;
+    profile?: string;
+  };
+}
+
+/**
+ * Parse task text to task object
+ */
+export function parseTaskText(text: string): KanbanTask {
+  const lines = text.trim().split('\n');
+  const firstLine = lines[0];
+  
+  // Check if first line starts with ### or ####
+  if (!firstLine.startsWith('### ') && !firstLine.startsWith('#### ')) {
+    throw new Error('Task text must start with ### or ####');
+  }
+
+  const task: KanbanTask = {
+    title: firstLine.replace(/^#{3,4}\s+/, ''), // Remove ### or #### prefix
+    description: '',
+    tags: []
+  };
+
+  // Get remaining text
+  const remainingText = lines.slice(1).join('\n');
+
+  // Find all markdown links: [text](url)
+  const linkPattern = /\[(.*?)\]\((.*?)\)/g;
+  const links = Array.from(remainingText.matchAll(linkPattern));
+  let descriptionText = remainingText;
+
+  links.forEach(link => {
+    const [fullMatch, text, url] = link;
+    
+    // Process based on link text
+    if (text === '=') {
+      // Detail file
+      task.detailFile = url;
+    } else if (text.startsWith('#')) {
+      // Tag
+      task.tags.push(text.substring(1));
+    } else if (text.startsWith('@')) {
+      // Assignee
+      task.assignee = {
+        name: text.substring(1),
+        profile: url
+      };
+    }
+
+    // Remove the link from description text
+    descriptionText = descriptionText.replace(fullMatch, '').trim();
+  });
+
+  // Set description (first 50 chars)
+  task.description = descriptionText.substring(0, 50).trim();
+  if (descriptionText.length > 50) {
+    task.description += '...';
+  }
+
+  return task;
 }
 
 /**
@@ -162,7 +253,8 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
         }
         currentSection = {
           title: heading.text,
-          columns: []
+          columns: [],
+          tasks: []
         };
       } else if (heading.level === 2 && currentSection) {
         currentSection.columns.push(heading.text);
