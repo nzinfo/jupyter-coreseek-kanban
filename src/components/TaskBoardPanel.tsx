@@ -344,7 +344,8 @@ export class TaskBoardPanel extends SidePanel {
     // Remove all content panels
     const widgets = [...this.widgets];
     widgets.forEach(widget => {
-      if (widget instanceof PanelWithToolbar) {
+      if (widget instanceof PanelWithToolbar 
+          && !(widget instanceof TaskBoardHeaderEditor)) {
         widget.dispose();
       }
     });
