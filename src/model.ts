@@ -1,4 +1,5 @@
 import { Signal } from '@lumino/signaling';
+import { IDocumentManager } from '@jupyterlab/docmanager';
 import { IChangedArgs } from '@jupyterlab/coreutils';
 import { YFile, DocumentChange, FileChange } from '@jupyter/ydoc'; //  ISharedFile
 import { DocumentModel, DocumentRegistry, TextModelFactory } from '@jupyterlab/docregistry';
@@ -162,7 +163,7 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
   private _structure: KanbanStructure | null = null;
   readonly model_name = 'kanban';
 
-  constructor(options: Kanban.IModelOptions = {}) {
+  constructor(docManager: IDocumentManager, options: Kanban.IModelOptions = {}) {
     // Pass all options to parent constructor, including collaborative flag
     super(options);
 
@@ -340,8 +341,10 @@ export class KanbanModelFactory extends TextModelFactory {
    * #### Notes
    * This is a read-only property.
    */
-  constructor(collaborative?: boolean) {
+  constructor(docManager: IDocumentManager, collaborative?: boolean) {
     super(collaborative);
+
+    this._docManager = docManager;
   }
 
   get name(): string {
@@ -375,6 +378,9 @@ export class KanbanModelFactory extends TextModelFactory {
    * @returns A new document model.
    */
   createNew(options: DocumentRegistry.IModelOptions<YFile> = {}): DocumentRegistry.ICodeModel {
-    return new KanbanModel(options);
+    // console.log(options.sharedModel?.getSource());
+    return new KanbanModel(this._docManager,options);
   }
+
+  private _docManager: IDocumentManager;
 }
