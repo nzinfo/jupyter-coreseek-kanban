@@ -4,6 +4,10 @@ import {
 } from '@jupyterlab/application';
 
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
+import {
+  IDocumentManager,
+  // IDocumentWidgetOpener,
+} from '@jupyterlab/docmanager';
 import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
 import { IEditorServices } from '@jupyterlab/codeeditor';
 import { DocumentRegistry, ABCWidgetFactory } from '@jupyterlab/docregistry';
@@ -17,6 +21,7 @@ class CollaborativeEditorFactory extends ABCWidgetFactory<
   DocumentRegistry.IModel
 > {
   private editorServices: IEditorServices;
+  private sharedWidget: CollaborativeEditorWidget | null = null;
 
   constructor(options: DocumentRegistry.IWidgetFactoryOptions<CollaborativeEditorWidget>, editorServices: IEditorServices) {
     super(options);
@@ -24,7 +29,10 @@ class CollaborativeEditorFactory extends ABCWidgetFactory<
   }
 
   protected createNewWidget(context: DocumentRegistry.Context): CollaborativeEditorWidget {
-    return new CollaborativeEditorWidget(context, this.editorServices);
+    if (!this.sharedWidget) {
+      this.sharedWidget = new CollaborativeEditorWidget(context, this.editorServices);
+    }
+    return this.sharedWidget;
   }
 }
 
@@ -35,10 +43,11 @@ const plugin: JupyterFrontEndPlugin<void> = {
   id: '@coreseek/jupyter-kanban:plugin',
   description: 'A JupyterLab extension for collaborative Kanban boards',
   autoStart: true,
-  requires: [IFileBrowserFactory, IEditorServices],
+  requires: [IDocumentManager, IFileBrowserFactory, IEditorServices],
   optional: [ISettingRegistry],
   activate: (
     app: JupyterFrontEnd,
+    docManager: IDocumentManager,
     browserFactory: IFileBrowserFactory,
     editorServices: IEditorServices,
     settingRegistry: ISettingRegistry | null
@@ -49,35 +58,20 @@ const plugin: JupyterFrontEndPlugin<void> = {
     const factory = new CollaborativeEditorFactory({
       name: 'Kanban Editor',
       fileTypes: ['markdown'],
-      defaultFor: []
+      defaultFor: ['markdown']
     }, editorServices);
 
     app.docRegistry.addWidgetFactory(factory);
 
-    // Add the context menu item
-    app.commands.addCommand('kanban:open', {
-      label: 'Open as Kanban',
-      execute: () => {
-        const widget = browserFactory.tracker.currentWidget;
-        if (!widget) {
-          return;
-        }
-        const selectedItem = widget.selectedItems().next().value;
-        if (selectedItem) {
-          const path = selectedItem.path;
-          app.commands.execute('docmanager:open', {
-            path,
-            factory: 'Kanban Editor'
-          });
-        }
-      }
-    });
-
-    app.contextMenu.addItem({
-      command: 'kanban:open',
-      selector: '.jp-DirListing-item',
-      rank: 1
-    });
+    // Create and register the right panel
+    const widget = docManager.openOrReveal('kanban.md', 'Kanban Editor');
+    if (widget) {
+      widget.id = 'collaborative-editor-panel';
+      widget.title.label = 'Collaborative Editor';
+      widget.title.closable = true;
+      
+      app.shell.add(widget, 'right', { rank: 1000 });
+    }
 
     if (settingRegistry) {
       settingRegistry
