@@ -322,14 +322,6 @@ export class TaskBoardPanel extends SidePanel {
       this._headerEditor.hide();
       this._headerEditor.parent = null;
     });
-
-    this._headerEditor.setOnRevert(() => {
-      const currentContent = this._sharedModel.getSource();
-      console.log('Reverting content from model:', currentContent);
-      this._headerEditor.setContent(currentContent);
-      this._headerEditor.hide();
-      this._headerEditor.parent = null;
-    });
   }
 
   private _updateFromModel(): void {

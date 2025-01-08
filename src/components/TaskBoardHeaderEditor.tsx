@@ -1,6 +1,6 @@
 import { TranslationBundle } from '@jupyterlab/translation';
 import { PanelWithToolbar, ToolbarButton } from '@jupyterlab/ui-components';
-import { saveIcon, undoIcon } from '@jupyterlab/ui-components';
+import { saveIcon } from '@jupyterlab/ui-components';
 import { CodeEditorWrapper, IEditorServices } from '@jupyterlab/codeeditor';
 import { Signal } from '@lumino/signaling';
 import { ISharedText, YFile } from '@jupyter/ydoc';
@@ -111,19 +111,6 @@ export class TaskBoardHeaderEditor extends PanelWithToolbar {
 
     // Add toolbar buttons
     this.toolbar.addItem(
-      'revert',
-      new ToolbarButton({
-        icon: undoIcon,
-        onClick: () => {
-          if (this._onRevert) {
-            this._onRevert();
-          }
-        },
-        tooltip: this.trans.__('Revert changes')
-      })
-    );
-
-    this.toolbar.addItem(
       'save',
       new ToolbarButton({
         icon: saveIcon,
@@ -172,13 +159,6 @@ export class TaskBoardHeaderEditor extends PanelWithToolbar {
   }
 
   /**
-   * Set the revert callback
-   */
-  setOnRevert(callback: () => void): void {
-    this._onRevert = callback;
-  }
-
-  /**
    * Get the editor content
    */
   getContent(): string {
@@ -224,7 +204,7 @@ export class TaskBoardHeaderEditor extends PanelWithToolbar {
   }
 
   private _onSave: (() => void) | null = null;
-  private _onRevert: (() => void) | null = null;
+  // private _onRevert: (() => void) | null = null;
   protected trans: TranslationBundle;
   private _editor: CodeEditorWrapper;
   private _editorModel: CollaborativeEditorModel;

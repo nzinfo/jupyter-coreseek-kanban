@@ -1,6 +1,6 @@
 import {
   DocumentRegistry,
-  DocumentWidget
+  IDocumentWidget
 } from '@jupyterlab/docregistry';
 
 import {
@@ -11,9 +11,9 @@ import {
 } from '@jupyterlab/codeeditor';
 
 import { ISharedText, YFile } from '@jupyter/ydoc';
-import { Widget } from '@lumino/widgets';
+import { Widget, BoxLayout } from '@lumino/widgets';
 import { Signal } from '@lumino/signaling';
-import { ToolbarButton } from '@jupyterlab/apputils';
+import { Toolbar } from '@jupyterlab/ui-components';
 import { IChangedArgs } from '@jupyterlab/coreutils';
 import { IObservableMap, ObservableMap } from '@jupyterlab/observables';
 
@@ -75,14 +75,24 @@ class CollaborativeEditorModel implements CodeEditor.IModel {
   private _isDisposed = false;
 }
 
-export class CollaborativeEditorWidget extends DocumentWidget<Widget, DocumentRegistry.IModel> {
-  constructor(context: DocumentRegistry.Context, editorServices: IEditorServices) {
-    const content = new Widget();
-    content.addClass('jp-CollaborativeEditor');
-    super({ context, content });
+export class CollaborativeEditorWidget extends Widget implements IDocumentWidget<Widget, DocumentRegistry.IModel> {
+  //readonly revealed = new Signal<this, void>(this);
 
-    // Initialize the signal before using it
+  constructor(context: DocumentRegistry.Context, editorServices: IEditorServices) {
+    super();
+    this.addClass('jp-CollaborativeEditor');
+    
+    // Create layout
+    const layout = new BoxLayout();
+    this.layout = layout;
+    
+    // Create toolbar
+    this._toolbar = new Toolbar();
+    // layout.addWidget(this._toolbar);
+
+    // Initialize the signal
     this._ready = new Signal<this, void>(this);
+    this.context = context;
 
     // Create the editor model
     const editorModel = new CollaborativeEditorModel({
@@ -103,17 +113,21 @@ export class CollaborativeEditorWidget extends DocumentWidget<Widget, DocumentRe
     });
 
     this._editor = editorWidget;
-    content.node.appendChild(editorWidget.node);
+    layout.addWidget(editorWidget);
+
+    // Set content widget
+    this._content = this._editor;
 
     // Set up collaboration
-    const sharedModel = context.model.sharedModel;
-    sharedModel.changed.connect(this._onModelChanged, this);
+    // const sharedModel = context.model.sharedModel;
+    // sharedModel.changed.connect(this._onModelChanged, this);
     
     void context.ready.then(() => {
       this._ready.emit();
-      this._onModelChanged();
+      //this._onModelChanged();
     });
 
+    /*
     // Add a save button to the toolbar
     const saveButton = new ToolbarButton({
       icon: 'ui-components:save',
@@ -122,47 +136,57 @@ export class CollaborativeEditorWidget extends DocumentWidget<Widget, DocumentRe
       },
       tooltip: 'Save'
     });
-    this.toolbar.addItem('save', saveButton);
-
+    this._toolbar.addItem('save', saveButton);
+    */
+   
     // Handle collaborative features if available
     if (context.model.collaborative) {
       console.log('Collaborative features are available');
-      // TODO: Implement collaborative features when API is available
     }
+    
+    this._revealed = Promise.resolve(undefined);
   }
 
-  private _onModelChanged(): void {
-    /*
-    const handler = (sender: ISharedText, args: SourceChange) => {
-        expect(args.sourceChange).toEqual([{ insert: 'foo' }]);
-        called = true;
-      };
-      model.sharedModel.changed.connect(handler);
-    */
-    if (!this._editor) {
+  readonly context: DocumentRegistry.Context;
+  
+  get content(): Widget {
+    return this._content;
+  }
+
+  get toolbar(): Toolbar<Widget> {
+    return this._toolbar;
+  }
+
+  /**
+ * Whether the content widget or an error is revealed.
+ */
+  get isRevealed(): boolean {
+    return this._isRevealed;
+  }
+
+  /**
+   * A promise that resolves when the widget is revealed.
+   */
+  get revealed(): Promise<void> {
+    return this._revealed;
+  }  
+
+  setFragment(fragment: string): void {
+    // No-op implementation for fragment handling
+  }
+
+  dispose(): void {
+    if (this.isDisposed) {
       return;
     }
-    const model = this.context.model;
-    const editorModel = this._editor.editor.model;
-    const currentSource = editorModel.sharedModel.source;
-    const modelSource = model.toString();
-
-    console.log('Model change detected:', {
-      currentSource: currentSource.slice(0, 100) + '...', 
-      modelSource: modelSource.slice(0, 100) + '...'
-    });
-
-    // Only update if sources are different to prevent recursive updates
-    if (currentSource !== modelSource) {
-      console.log('Updating shared model source');
-      editorModel.sharedModel.setSource(modelSource);
-    }
+    // this._ready.dispose();
+    super.dispose();
   }
 
-  private _ready: Signal<this, void>;
+  private readonly _ready: Signal<this, void>;
   private _editor: CodeEditorWrapper;
-
-  get ready(): Signal<this, void> {
-    return this._ready;
-  }
+  private _toolbar: Toolbar<Widget>;
+  private _content: Widget;
+  private _isRevealed = false;
+  private _revealed: Promise<void>;
 }

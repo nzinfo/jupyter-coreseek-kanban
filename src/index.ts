@@ -2,6 +2,7 @@ import {
   JupyterFrontEnd,
   JupyterFrontEndPlugin
 } from '@jupyterlab/application';
+import { IDocumentManager } from '@jupyterlab/docmanager';
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
 import { IEditorServices } from '@jupyterlab/codeeditor';
@@ -16,10 +17,11 @@ const plugin: JupyterFrontEndPlugin<void> = {
   id: '@coreseek/jupyter-kanban:plugin',
   description: 'A JupyterLab extension for collaborative Kanban boards',
   autoStart: true,
-  requires: [IFileBrowserFactory, IEditorServices],
+  requires: [IDocumentManager, IFileBrowserFactory, IEditorServices],
   optional: [ISettingRegistry, IMarkdownViewerTracker],
   activate: (
     app: JupyterFrontEnd,
+    docManager: IDocumentManager,
     browserFactory: IFileBrowserFactory,
     editorServices: IEditorServices,
     settingRegistry: ISettingRegistry | null,
@@ -36,7 +38,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     });
 
     // Create and register the model factory
-    const modelFactory = new KanbanModelFactory();
+    const modelFactory = new KanbanModelFactory(docManager);
     app.docRegistry.addModelFactory(modelFactory);
 
     // 获取 markdown 文件类型

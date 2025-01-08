@@ -1,4 +1,5 @@
 import { Signal } from '@lumino/signaling';
+import { IDocumentManager } from '@jupyterlab/docmanager';
 import { IChangedArgs } from '@jupyterlab/coreutils';
 import { YFile, DocumentChange, FileChange } from '@jupyter/ydoc'; //  ISharedFile
 import { DocumentModel, DocumentRegistry, TextModelFactory } from '@jupyterlab/docregistry';
@@ -9,10 +10,7 @@ import { Contents } from '@jupyterlab/services';
  */
 export namespace Kanban {
   export interface IModelOptions extends DocumentRegistry.IModelOptions<YFile> {
-    /**
-     * The shared model for collaborative editing
-     */
-    sample_name?: string;
+    docManager: IDocumentManager;
   }
 
   /**
@@ -162,7 +160,7 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
   private _structure: KanbanStructure | null = null;
   readonly model_name = 'kanban';
 
-  constructor(options: Kanban.IModelOptions = {}) {
+  constructor(options: Kanban.IModelOptions) {
     // Pass all options to parent constructor, including collaborative flag
     super(options);
 
@@ -340,8 +338,9 @@ export class KanbanModelFactory extends TextModelFactory {
    * #### Notes
    * This is a read-only property.
    */
-  constructor(collaborative?: boolean) {
+  constructor(docManager: IDocumentManager, collaborative?: boolean) {
     super(collaborative);
+    this._docManager = docManager;
   }
 
   get name(): string {
@@ -375,6 +374,11 @@ export class KanbanModelFactory extends TextModelFactory {
    * @returns A new document model.
    */
   createNew(options: DocumentRegistry.IModelOptions<YFile> = {}): DocumentRegistry.ICodeModel {
-    return new KanbanModel(options);
+    return new KanbanModel({
+      ...options,
+      docManager: this._docManager
+    });
   }
+
+  private _docManager: IDocumentManager
 }
