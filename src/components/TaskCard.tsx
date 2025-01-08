@@ -54,9 +54,9 @@ export class TaskCard extends Widget {
       // 如果没有头像URL，创建一个显示首字母的div
       avatar = document.createElement('div');
       // FIXME: 中英文对应的 textContent 不同
-      avatar.textContent = this._task.assignee.name.charAt(0);
+      avatar.textContent = this._task.assignee[0].name.charAt(0);
       avatar.className = 'jp-TaskCard-avatar';
-      avatar.title = this._task.assignee.name;
+      avatar.title = this._task.assignee[0].name;
 
       header.appendChild(avatar);
     }

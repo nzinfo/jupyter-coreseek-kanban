@@ -95,10 +95,10 @@ export interface KanbanTask {
   /**
    * Assigned user
    */
-  assignee?: {
+  assignee: {
     name: string;
     profile?: string;
-  };
+  }[];
 }
 
 /**
@@ -108,9 +108,16 @@ export function parseTaskText(text: string): KanbanTask {
   const task: KanbanTask = {
     title: text,
     description: '',
-    tags: []
+    tags: [],
+    assignee: []
   };
-
+  /*
+  任务示例：
+  [=](detail.md)
+  [#tag1](tag1.md)
+  [#tag2](tag2.md)
+  [@user1](user1.md)
+   */
   // Find all markdown links: [text](url)
   const linkPattern = /\[(.*?)\]\((.*?)\)/g;
   const links = Array.from(text.matchAll(linkPattern));
@@ -127,10 +134,10 @@ export function parseTaskText(text: string): KanbanTask {
       task.tags.push(text.substring(1));
     } else if (text.startsWith('@')) {
       // Assignee
-      task.assignee = {
+      task.assignee.push({  
         name: text.substring(1),
         profile: url
-      };
+      });
     }
 
     // Remove the link from title
@@ -154,6 +161,7 @@ export function parseTaskText(text: string): KanbanTask {
  * Implementation of Kanban.IModel
  */
 export class KanbanModel extends DocumentModel implements Kanban.IModel {
+  private _docManager: IDocumentManager;
   private _sharedModel: YFile;
   private _changed = new Signal<this, IChangedArgs<string>>(this);
   private _readOnlyChanged = new Signal<this, IChangedArgs<boolean>>(this);
@@ -164,12 +172,18 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
     // Pass all options to parent constructor, including collaborative flag
     super(options);
 
+    this._docManager = options.docManager;
+    
     // TODO: 不应该 有 new File 的情况。
     this._sharedModel = options.sharedModel ?? new YFile();
     // Connect to the shared model's changed event
     this._sharedModel.changed.connect(this._onSharedModelChanged, this);
     // 初始化时解析结构
     this._parseStructure();
+  }
+  
+  get docManager(): IDocumentManager {
+    return this._docManager;
   }
 
   get changed(): Signal<this, IChangedArgs<string>> {

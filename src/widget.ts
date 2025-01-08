@@ -29,9 +29,10 @@ export class KanbanWidget extends DocumentWidget<KanbanLayout, DocumentRegistry.
   ) {
     // Create the main layout widget
     const content = new KanbanLayout({
+      context,
       translator: translator || nullTranslator,
       editorServices: editorServices,
-      model: context.model
+      //model: context.model
     });
     
     // Call the parent constructor

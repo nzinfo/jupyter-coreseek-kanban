@@ -27,9 +27,10 @@ export class KanbanLayout extends SplitPanel {
     
     // Create right panel widget
     this._boardWidget = new TaskBoardPanel({ 
+      context: options.context,
       translator: this._translator,
       editorServices: options.editorServices,
-      model: options.model
+      // model: options.model
     });
     this._boardWidget.addClass('jp-KanbanLayout-left');
     
@@ -97,6 +98,7 @@ export namespace KanbanLayout {
    * The options used to create a KanbanLayout.
    */
   export interface IOptions {
+    context: DocumentRegistry.Context;
     /**
      * The application language translator.
      */
@@ -110,6 +112,6 @@ export namespace KanbanLayout {
     /**
      * The document model.
      */
-    model: DocumentRegistry.IModel;
+    //model: DocumentRegistry.IModel;
   }
 }

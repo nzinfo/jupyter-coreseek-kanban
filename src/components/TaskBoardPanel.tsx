@@ -19,7 +19,31 @@ import { TaskBoardHeaderEditor } from './TaskBoardHeaderEditor';
 import { IEditorServices } from '@jupyterlab/codeeditor';
 import { YFile } from '@jupyter/ydoc';
 import { KanbanModel, KanbanSection } from '../model';
-import { DocumentRegistry } from '@jupyterlab/docregistry';
+import { DocumentRegistry, ABCWidgetFactory } from '@jupyterlab/docregistry';
+import { CollaborativeEditorWidget } from '../editor';
+
+/**
+ * A widget factory for collaborative editors.
+ */
+class PanelEditorFactory extends ABCWidgetFactory<
+  CollaborativeEditorWidget,
+  DocumentRegistry.IModel
+> {
+  private editorServices: IEditorServices;
+  private sharedWidget: CollaborativeEditorWidget | null = null;
+
+  constructor(options: DocumentRegistry.IWidgetFactoryOptions<CollaborativeEditorWidget>, editorServices: IEditorServices) {
+    super(options);
+    this.editorServices = editorServices;
+  }
+
+  protected createNewWidget(context: DocumentRegistry.Context): CollaborativeEditorWidget {
+    if (!this.sharedWidget) {
+      this.sharedWidget = new CollaborativeEditorWidget(context, this.editorServices);
+    }
+    return this.sharedWidget;
+  }
+}
 
 /**
  * Task board header component
@@ -252,15 +276,15 @@ namespace TaskBoardContent {
  */
 export class TaskBoardPanel extends SidePanel {
   constructor(options: TaskBoardPanel.IOptions) {
-    const { translator, editorServices, model } = options;
+    const { translator, editorServices, context } = options;
     super({ translator });
     
     this.addClass('jp-TaskBoard-panel');
     this.trans = translator.load('jupyter-coreseek-kanban');
 
     // Store the model
-    this._model = model as KanbanModel;
-    this._sharedModel = (model.sharedModel as YFile);
+    this._model = context.model as KanbanModel;
+    this._sharedModel = (this._model.sharedModel as YFile);
     
     // Set up shared model change handling
     this._model.changed.connect(() => {
@@ -268,6 +292,7 @@ export class TaskBoardPanel extends SidePanel {
     });
 
     this._sharedModel.changed.connect((sender: YFile) => {
+      /*
       // 如果编辑器是打开的，更新其内容
       if (this._headerEditor.isVisible) {
         const currentContent = this._headerEditor.getContent();
@@ -276,14 +301,16 @@ export class TaskBoardPanel extends SidePanel {
           this._headerEditor.setContent(modelContent);
         }
       }
+      */
+      // this._updateFromModel(); 
     });
 
     // Add header editor panel with the shared model
-    this._headerEditor = new TaskBoardHeaderEditor({ 
+    this._headerEditor = null; /* new TaskBoardHeaderEditor({ 
       trans: this.trans,
       editorServices: editorServices,
       sharedModel: this._sharedModel
-    });
+    }); */
 
     // Set up collaboration awareness
     if (this._sharedModel.awareness) {
@@ -301,20 +328,63 @@ export class TaskBoardPanel extends SidePanel {
         parent.toggleTaskList(visible);
       }
     });
+    
     this._task_header.setHeaderClickCallback(() => {
+      // Show header editor
+      this._headerEditor?.show();
+      
+      // Create header editor if it doesn't exist
+      if (!this._headerEditor) {
+        // try open the editor
+        this._headerEditor = new PanelWithToolbar();
+        this._headerEditor.addClass('jp-TaskBoard-headerEditor');
+        this._headerEditor.title.label = this.trans.__('Description');
+
+        // Register the editor factory
+        const factory = new PanelEditorFactory({
+          name: 'Board Description Editor',
+          fileTypes: ['markdown'],
+          defaultFor: ['markdown']
+        }, editorServices);
+        
+        this._model.docManager.registry.addWidgetFactory(factory);
+        
+        // Create and open the editor
+        // 根据 context 获取当前文件路径，拼接，构造 path + '.files/description.md'
+        let path = context.path;
+        if (path.endsWith('.kmd')) {
+          // 应该一直为真
+          path = path.slice(0, -3);
+        }
+        path += '.files/description.md';
+        const editorWidget = this._model.docManager.openOrReveal(path,
+                                                    'Board Description Editor');
+        
+        if (editorWidget) {
+          // Add the editor to the header editor panel
+          this._headerEditor.addWidget(editorWidget);
+          this._headerEditor.show();
+        }
+      }
       const currentContent = this._sharedModel.getSource();
       console.log('Current model content:', currentContent);
 
       this.addWidget(this._headerEditor);
-      this._headerEditor.setContent(currentContent);
+      // this._headerEditor.setContent(currentContent);
       this._headerEditor.show();
     });
+
     this.header.addWidget(this._task_header);
 
     // Initial update from model
     this._updateFromModel();
 
     // Set up save and revert handlers
+    /*
+    this.trans = options.trans;
+    this.addClass('jp-TaskBoard-headerEditor');
+    this.title.label = this.trans.__('Description');
+
     this._headerEditor.setOnSave(() => {
       const content = this._headerEditor.getContent();
       console.log('Saving content to model:', content);
@@ -322,6 +392,7 @@ export class TaskBoardPanel extends SidePanel {
       this._headerEditor.hide();
       this._headerEditor.parent = null;
     });
+    */
   }
 
   private _updateFromModel(): void {
@@ -410,7 +481,7 @@ export class TaskBoardPanel extends SidePanel {
   }
 
   protected trans: TranslationBundle;
-  private _headerEditor: TaskBoardHeaderEditor;
+  private _headerEditor: PanelWithToolbar | null; // 允许完全不存在
   private _sharedModel: YFile;
   private _model: KanbanModel;
   private _task_header: TaskBoardHeader;
@@ -425,6 +496,7 @@ export namespace TaskBoardPanel {
    * The options used to create a TaskBoardPanel.
    */
   export interface IOptions {
+    context: DocumentRegistry.Context;
     /**
      * The application language translator.
      */
@@ -438,6 +510,6 @@ export namespace TaskBoardPanel {
     /**
      * The document context model
      */
-    model: DocumentRegistry.IModel;
+    // model: DocumentRegistry.IModel;
   }
 }

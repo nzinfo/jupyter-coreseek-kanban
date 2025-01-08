@@ -8,7 +8,6 @@ import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
 import { IEditorServices } from '@jupyterlab/codeeditor';
 import { KanbanWidgetFactory } from './widget';
 import { KanbanModelFactory } from './model';
-import { IMarkdownViewerTracker } from '@jupyterlab/markdownviewer';
 
 /**
  * Initialization data for the @coreseek/jupyter-kanban extension.
@@ -18,14 +17,13 @@ const plugin: JupyterFrontEndPlugin<void> = {
   description: 'A JupyterLab extension for collaborative Kanban boards',
   autoStart: true,
   requires: [IDocumentManager, IFileBrowserFactory, IEditorServices],
-  optional: [ISettingRegistry, IMarkdownViewerTracker],
+  optional: [ISettingRegistry],
   activate: (
     app: JupyterFrontEnd,
     docManager: IDocumentManager,
     browserFactory: IFileBrowserFactory,
     editorServices: IEditorServices,
-    settingRegistry: ISettingRegistry | null,
-    tracker?: IMarkdownViewerTracker
+    settingRegistry: ISettingRegistry | null
   ) => {
     console.log('JupyterLab extension @coreseek/jupyter-kanban is activated!');
 
