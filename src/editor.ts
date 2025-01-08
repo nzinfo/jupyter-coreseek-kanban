@@ -13,7 +13,7 @@ import {
 import { ISharedText, YFile } from '@jupyter/ydoc';
 import { Widget, BoxLayout } from '@lumino/widgets';
 import { Signal } from '@lumino/signaling';
-import { ToolbarButton, Toolbar } from '@jupyterlab/ui-components';
+import { Toolbar } from '@jupyterlab/ui-components';
 import { IChangedArgs } from '@jupyterlab/coreutils';
 import { IObservableMap, ObservableMap } from '@jupyterlab/observables';
 

@@ -6,12 +6,12 @@ import {
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 import {
   IDocumentManager,
-  // IDocumentWidgetOpener,
 } from '@jupyterlab/docmanager';
 import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
 import { IEditorServices } from '@jupyterlab/codeeditor';
 import { DocumentRegistry, ABCWidgetFactory } from '@jupyterlab/docregistry';
 import { CollaborativeEditorWidget } from './editor';
+import { Widget, BoxLayout } from '@lumino/widgets';
 
 /**
  * A widget factory for collaborative editors.
@@ -54,6 +54,16 @@ const plugin: JupyterFrontEndPlugin<void> = {
   ) => {
     console.log('JupyterLab extension @coreseek/jupyter-kanban is activated!');
 
+    // Create a container widget
+    const container = new Widget();
+    container.id = 'kanban-container';
+    container.title.label = 'Kanban Container';
+    container.title.closable = true;
+
+    // Use BoxLayout for the container
+    const layout = new BoxLayout();
+    container.layout = layout;
+
     // Register the editor factory
     const factory = new CollaborativeEditorFactory({
       name: 'Kanban Editor',
@@ -63,14 +73,19 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
     app.docRegistry.addWidgetFactory(factory);
 
-    // Create and register the right panel
-    const widget = docManager.openOrReveal('kanban.md', 'Kanban Editor');
-    if (widget) {
-      widget.id = 'collaborative-editor-panel';
-      widget.title.label = 'Collaborative Editor';
-      widget.title.closable = true;
+    // Create and add the kanban editor widget
+    const editorWidget = docManager.openOrReveal('kanban.md', 'Kanban Editor');
+    if (editorWidget) {
+      editorWidget.id = 'collaborative-editor-panel';
+      editorWidget.title.label = 'Collaborative Editor';
+      editorWidget.title.closable = true;
       
-      app.shell.add(widget, 'right', { rank: 1000 });
+      // Add the editor widget to the container
+      BoxLayout.setStretch(editorWidget, 1);
+      layout.addWidget(editorWidget);
+      
+      // Add the container to the shell
+      app.shell.add(container, 'right', { rank: 1000 });
     }
 
     if (settingRegistry) {
