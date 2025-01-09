@@ -1,5 +1,5 @@
 import React from 'react';
-import { ReactWidget } from '@jupyterlab/apputils';
+import { ReactWidget } from '@jupyterlab/ui-components';
 import { TranslationBundle } from '@jupyterlab/translation';
 import { addIcon, closeIcon, caretUpIcon, caretDownIcon, checkIcon } from '@jupyterlab/ui-components';
 

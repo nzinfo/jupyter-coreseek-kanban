@@ -12,10 +12,11 @@ import {
   caretRightIcon,
   editIcon
 } from '@jupyterlab/ui-components';
+// import { PathExt } from '@jupyterlab/coreutils';
 import { TaskColumn } from './TaskColumn';
-import { Panel } from '@lumino/widgets';
+import { Panel, Widget } from '@lumino/widgets';
 import { KanbanLayout } from './KanbanLayout';
-import { TaskBoardHeaderEditor } from './TaskBoardHeaderEditor';
+// import { TaskBoardHeaderEditor } from './TaskBoardHeaderEditor';
 import { IEditorServices } from '@jupyterlab/codeeditor';
 import { YFile } from '@jupyter/ydoc';
 import { KanbanModel, KanbanSection } from '../model';
@@ -347,31 +348,64 @@ export class TaskBoardPanel extends SidePanel {
           defaultFor: ['markdown']
         }, editorServices);
         
-        this._model.docManager.registry.addWidgetFactory(factory);
+        let disposable_factory = this._model.docManager.registry.addWidgetFactory(factory);
         
         // Create and open the editor
         // 根据 context 获取当前文件路径，拼接，构造 path + '.files/description.md'
         let path = context.path;
         if (path.endsWith('.kmd')) {
           // 应该一直为真
-          path = path.slice(0, -3);
+          path = path.slice(0, -4);
         }
+      
+        let dir_path = path + '.files';
         path += '.files/description.md';
-        const editorWidget = this._model.docManager.openOrReveal(path,
-                                                    'Board Description Editor');
+        // 需要确保 path 存在
+        let contents = this._model.docManager.services.contents;
+        contents.get(path, { type: 'file', content: false }).then((model) => {
+          // console.log('file exists:', path);
+          const editorWidget = this._model.docManager.openOrReveal(path,
+            'Board Description Editor');
+          this._addEditor(editorWidget!);
+          disposable_factory.dispose();
+        }).catch((error) => {
+          console.log('file not exists:', path);
+          // 文件不存在，创建之。 需要注意，可能目录本身也不存在
+          // 检查目录是否存在
+          contents.get(dir_path, { type: 'directory', content: false }).then((model) => {
+            // dir exists， 创建文件即可
+            contents.newUntitled({ path: dir_path, type: 'file', ext: 'md' }).then((model) => {
+              contents.rename(model.path, path).then(() => {
+                console.log('file created:', path);
+                const editorWidget = this._model.docManager.openOrReveal(path,
+                  'Board Description Editor');
+                this._addEditor(editorWidget!);
+                disposable_factory.dispose();
+              });
+            });
+          }).catch((error) => {
+            // dir not exists
+            console.log('dir not exists:', dir_path);
+            let parent_path =  contents.normalize(dir_path+"/../");
+            contents.newUntitled({ path: parent_path, type: 'directory' }).then((model) => {
+              console.log('dir created:', dir_path);
+              contents.rename(model.path, dir_path).then(() => {
+                // dir created， 再创建文件
+                contents.newUntitled({ path: dir_path, type: 'file', ext: 'md' }).then((model) => {
+                  contents.rename(model.path, path).then(() => {
+                    // console.log('file created:', path);
+                    const editorWidget = this._model.docManager.openOrReveal(path,
+                      'Board Description Editor');
+                    this._addEditor(editorWidget!);
+                    disposable_factory.dispose();
+                  });
+                });
+              }); // 目录创建结束
+            });
+          });
+        });
         
-        if (editorWidget) {
-          // Add the editor to the header editor panel
-          this._headerEditor.addWidget(editorWidget);
-          this._headerEditor.show();
-        }
       }
-      const currentContent = this._sharedModel.getSource();
-      console.log('Current model content:', currentContent);
-
-      this.addWidget(this._headerEditor);
-      // this._headerEditor.setContent(currentContent);
-      this._headerEditor.show();
     });
 
     this.header.addWidget(this._task_header);
@@ -395,6 +429,26 @@ export class TaskBoardPanel extends SidePanel {
     */
   }
 
+  private _addEditor(editorWidget: Widget): void {
+    if (this._headerEditor) {
+      // Add the editor to the header editor panel
+      this._headerEditor.addWidget(editorWidget);
+      
+      // 添加到主界面
+      this.addWidget(this._headerEditor);
+      // Ensure proper layout
+      editorWidget.update();
+      editorWidget.show();
+      
+      // Update the header editor
+      this._headerEditor.update();
+      this._headerEditor.show();
+      
+      // Force a layout update
+      this.update();
+    } 
+  }
+
   private _updateFromModel(): void {
     const structure = this._model.structure;
     if (!structure) {
@@ -405,12 +459,9 @@ export class TaskBoardPanel extends SidePanel {
     this._task_header.setTitle(structure.title || this.trans.__('Task Board'));
 
     // Remove all content panels
-    const widgets = [...this.widgets];
-    widgets.forEach(widget => {
-      if (widget instanceof PanelWithToolbar 
-          && !(widget instanceof TaskBoardHeaderEditor)) {
-        widget.dispose();
-      }
+    // const widgets = [...this.widgets];
+    this._sectionPanels.forEach(widget => {
+      widget.dispose();
     });
     this._sectionPanels = [];
 
