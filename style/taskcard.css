@@ -139,10 +139,6 @@
   background-color: var(--jp-layout-color2);
 }
 
-.jp-TaskCard {
-  cursor: move;
-}
-
 .jp-TaskCard.jp-mod-dragging {
   opacity: 0.5;
 }
