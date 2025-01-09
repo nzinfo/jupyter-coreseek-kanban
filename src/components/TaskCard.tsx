@@ -1,6 +1,8 @@
 import { Widget } from '@lumino/widgets';
 import { DragDropManager } from './dragdrop';
 import { KanbanTask } from '../model';
+import { Signal } from '@lumino/signaling';
+import { editIcon } from '@jupyterlab/ui-components';
 
 interface ITaskCardOptions {
   task: KanbanTask;
@@ -23,34 +25,50 @@ export class TaskCard extends Widget {
   constructor(options: ITaskCardOptions) {
     super();
     this._task = options.task;
+    this._editState = null;
+    this._isEditing = false;
     
     this.addClass('jp-TaskCard');
     
     // 启用拖动
-    this.node.draggable = true;
+    this._setDraggable(true);
     this.node.addEventListener('dragstart', this);
     this.node.addEventListener('dragend', this);
+    this.node.addEventListener('mouseenter', this._showCommands);
+    this.node.addEventListener('mouseleave', this._hideCommands);
+    
+    // 创建浮动命令按钮
+    this._commandsContainer = document.createElement('div');
+    this._commandsContainer.className = 'jp-TaskCard-commands';
+    this._commandsContainer.style.display = 'none';
+    
+    const editButton = document.createElement('button');
+    editButton.className = 'jp-TaskCard-command-button';
+    editButton.title = 'Edit';
+    editButton.appendChild(editIcon.element({
+      stylesheet: 'toolbarButton'
+    }));
+    editButton.addEventListener('click', this._onEditClick);
+    this._commandsContainer.appendChild(editButton);
     
     // 创建卡片内容
     const header = document.createElement('div');
     header.className = 'jp-TaskCard-header';
     
-    const title = document.createElement('span');
-    title.className = 'jp-TaskCard-title';
-    title.textContent = this._task.title;
-    
-    header.appendChild(title);
+    // 添加拖动把手
+    const dragHandle = document.createElement('span');
+    dragHandle.className = 'jp-TaskCard-draghandle';
+    dragHandle.textContent = '::';
+    header.appendChild(dragHandle);
+
+    // 创建标题容器
+    this._titleContainer = document.createElement('div');
+    this._titleContainer.className = 'jp-TaskCard-title-container';
+    this._renderTitle();
+    header.appendChild(this._titleContainer);
 
     let avatar: HTMLElement;
     if (this._task && this._task.assignee) {
-      /*
-      // 如果有头像URL，使用img标签
-      const imgAvatar = document.createElement('img');
-      imgAvatar.src = options.assignee.avatarUrl;
-      imgAvatar.alt = options.assignee.name;
-      avatar = imgAvatar;
-      } else {
-      */
       // 如果没有头像URL，创建一个显示首字母的div
       avatar = document.createElement('div');
       // FIXME: 中英文对应的 textContent 不同
@@ -73,11 +91,99 @@ export class TaskCard extends Widget {
       tagsContainer.appendChild(tagWidget.node);
     });
     
-    // 将所有元素添加到 Widget 的 node 中
+    // 将命令容器添加到卡片
+    this.node.appendChild(this._commandsContainer);
     this.node.appendChild(header);
     this.node.appendChild(summary);
     this.node.appendChild(tagsContainer);
   }
+
+  private _setDraggable(draggable: boolean): void {
+    this.node.draggable = draggable;
+    if (draggable) {
+      this.removeClass('jp-mod-editing');
+    } else {
+      this.addClass('jp-mod-editing');
+    }
+  }
+
+  private _renderTitle(): void {
+    this._titleContainer.innerHTML = '';
+    
+    if (this._editState) {
+      this._isEditing = true;
+      this._setDraggable(false);
+      
+      const editContainer = document.createElement('div');
+      editContainer.className = 'jp-TaskCard-title-edit';
+      
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'jp-KanbanOptions-edit-input';
+      input.value = this._editState.value;
+      input.spellcheck = false;
+      
+      input.addEventListener('input', (event: Event) => {
+        const target = event.target as HTMLInputElement;
+        if (this._editState) {
+          this._editState.value = target.value;
+        }
+      });
+      
+      input.addEventListener('keydown', (event: KeyboardEvent) => {
+        if (event.key === 'Enter') {
+          this._commitEdit();
+        } else if (event.key === 'Escape') {
+          this._cancelEdit();
+        }
+        event.stopPropagation();
+      });
+      
+      input.addEventListener('blur', () => {
+        this._commitEdit();
+      });
+      
+      editContainer.appendChild(input);
+      this._titleContainer.appendChild(editContainer);
+      
+      requestAnimationFrame(() => {
+        input.focus();
+        input.setSelectionRange(0, input.value.length);
+      });
+    } else {
+      this._isEditing = false;
+      this._setDraggable(true);
+      
+      const title = document.createElement('span');
+      title.className = 'jp-TaskCard-title';
+      title.textContent = this._task.title;
+      title.addEventListener('click', this._onTitleClick);
+      this._titleContainer.appendChild(title);
+    }
+  }
+
+  private _onTitleClick = (event: MouseEvent): void => {
+    this._editState = { value: this._task.title };
+    this._renderTitle();
+  };
+
+  private _cancelEdit = (): void => {
+    this._editState = null;
+    this._isEditing = false;
+    this._setDraggable(true);
+    this._renderTitle();
+  };
+
+  private _commitEdit = (): void => {
+    if (this._editState && this._editState.value !== this._task.title) {
+      this._task.title = this._editState.value;
+      this._taskChanged.emit(this._task);
+    }
+    this._editState = null;
+    this._isEditing = false;
+    this._setDraggable(true);
+    this._renderTitle();
+  };
 
   /**
    * 从父组件中分离此组件
@@ -98,10 +204,14 @@ export class TaskCard extends Widget {
   handleEvent(event: Event): void {
     switch (event.type) {
       case 'dragstart':
-        this.handleDragStart(event as DragEvent);
+        if (!this._isEditing) {
+          this.handleDragStart(event as DragEvent);
+        }
         break;
       case 'dragend':
-        this.handleDragEnd(event as DragEvent);
+        if (!this._isEditing) {
+          this.handleDragEnd(event as DragEvent);
+        }
         break;
     }
   }
@@ -118,5 +228,26 @@ export class TaskCard extends Widget {
     DragDropManager.dragSource = null;
   }
 
+  private _showCommands = (): void => {
+    this._commandsContainer.style.display = 'flex';
+  };
+
+  private _hideCommands = (): void => {
+    this._commandsContainer.style.display = 'none';
+  };
+
+  private _onEditClick = (event: MouseEvent): void => {
+    event.stopPropagation();
+    this._editState = { value: this._task.title };
+    this._renderTitle();
+  };
+
+  readonly taskChanged = new Signal<this, KanbanTask>(this);
+
   private _task: KanbanTask;
+  private _editState: { value: string } | null;
+  private _isEditing: boolean;
+  private _titleContainer: HTMLElement;
+  private _commandsContainer: HTMLElement;
+  private _taskChanged = this.taskChanged;
 }
