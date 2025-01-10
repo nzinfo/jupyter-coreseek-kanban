@@ -85,6 +85,7 @@ export class KanbanOptionsPanel extends ReactWidget {
                 defaultValue={this._editState?.value || ''}
                 onChange={this._handleEditChange}
                 onKeyDown={this._handleEditKeyDown}
+                onBlur={this._commitEdit}
                 autoFocus
               />
               <div className="jp-KanbanOptions-edit-actions">
@@ -190,6 +191,7 @@ export class KanbanOptionsPanel extends ReactWidget {
               defaultValue={this._editState?.value || ''}
               onChange={this._handleEditChange}
               onKeyDown={this._handleEditKeyDown}
+              onBlur={this._commitEdit}
               autoFocus
             />
             <div className="jp-KanbanOptions-edit-actions">
