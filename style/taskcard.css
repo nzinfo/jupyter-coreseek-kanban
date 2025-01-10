@@ -64,7 +64,7 @@
   z-index: 1;
 }
 
-.jp-KanbanOptions-edit-input {
+.jp-TaskCard-title-edit input {
   width: 100%;
   border: none;
   background: transparent;
@@ -78,7 +78,7 @@
   position: relative;
 }
 
-.jp-KanbanOptions-edit-input:focus {
+.jp-TaskCard-title-edit input:focus {
   outline: none;
 }
 
