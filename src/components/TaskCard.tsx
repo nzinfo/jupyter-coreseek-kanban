@@ -264,28 +264,57 @@ export class TaskCard extends Widget {
   private _onEditClick = (event: MouseEvent): void => {
     event.stopPropagation();
     
-    // 获取按钮的位置
+    // Get the TaskCard's position and dimensions
+    const cardRect = this.node.getBoundingClientRect();
     const buttonRect = (event.target as HTMLElement).getBoundingClientRect();
     
-    // 创建编辑器
+    // Create editor
     const editor = new TaskCardEditor({
       task: this._task,
       editorServices: this._editorServices
     });
     
-    // 设置编辑器位置
-    editor.container.node.style.position = 'absolute';
-    editor.container.node.style.left = `${buttonRect.left}px`;
-    editor.container.node.style.top = `${buttonRect.bottom + 4}px`;
+    // Calculate available space
+    const minEditorHeight = 300; // Minimum height needed for editor
+    const minEditorWidth = 300;  // Minimum width needed for editor
+    const spaceBelow = window.innerHeight - buttonRect.top;
+    const spaceRight = window.innerWidth - cardRect.right;
+    const spaceLeft = cardRect.left;
     
-    // 监听任务更改
+    // Set editor position and dimensions based on available space
+    editor.container.node.style.position = 'absolute';
+    editor.container.node.style.height = `${cardRect.height}px`;
+    
+    if (spaceBelow >= minEditorHeight) {
+      // Default position: below the card
+      editor.container.node.style.left = `${cardRect.left}px`;
+      editor.container.node.style.top = `${buttonRect.top}px`;
+      editor.container.node.style.right = `${window.innerWidth - buttonRect.right}px`;
+    } else if (spaceRight >= minEditorWidth) {
+      // Position on the right side
+      editor.container.node.style.left = `${cardRect.right + 8}px`;
+      editor.container.node.style.top = `${cardRect.top}px`;
+      editor.container.node.style.width = `${minEditorWidth}px`;
+    } else if (spaceLeft >= minEditorWidth) {
+      // Position on the left side
+      editor.container.node.style.right = `${window.innerWidth - cardRect.left + 8}px`;
+      editor.container.node.style.top = `${cardRect.top}px`;
+      editor.container.node.style.width = `${minEditorWidth}px`;
+    } else {
+      // Fallback: position below even if space is limited
+      editor.container.node.style.left = `${cardRect.left}px`;
+      editor.container.node.style.top = `${buttonRect.top}px`;
+      editor.container.node.style.right = `${window.innerWidth - buttonRect.right}px`;
+    }
+    
+    // Listen for task changes
     editor.taskChanged.connect((_, task) => {
       this._task = task;
       this._taskChanged.emit(task);
       this._renderTitle();
     });
     
-    // 添加到 body
+    // Add to body
     document.body.appendChild(editor.node);
   };
 

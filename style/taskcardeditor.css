@@ -12,12 +12,13 @@
 }
 
 .jp-TaskCardEditor-container {
+  position: absolute;
   background-color: var(--jp-layout-color1);
   border-radius: 3px;
   box-shadow: var(--jp-elevation-z6);
-  margin: 20px;
   min-width: 300px;
-  max-width: 500px;
+  resize: both;
+  overflow: auto;
 }
 
 .jp-TaskCardEditor-panel {
