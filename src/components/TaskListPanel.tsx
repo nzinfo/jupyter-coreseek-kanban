@@ -10,6 +10,8 @@ import {
 } from '@jupyterlab/ui-components';
 import { TaskColumn } from './TaskColumn';
 import { KanbanOptionsPanel } from './KanbanOptionsPanel';
+import { DocumentRegistry } from '@jupyterlab/docregistry';
+import { KanbanModel } from '../model';
 
 /**
  * The main panel for displaying tasks
@@ -39,7 +41,7 @@ export class TaskListPanel extends SidePanel {
     );
     this._optionsWidget = new KanbanOptionsPanel({
       trans: this.trans,
-      // onClose: () => this._hideOptionsPanel()
+      model: options.context.model as KanbanModel
     });
     optionsPanel.addWidget(this._optionsWidget);
     this._optionsPanel = optionsPanel;
@@ -170,6 +172,7 @@ export namespace TaskListPanel {
    * The options used to create a TaskListPanel.
    */
   export interface IOptions {
+    context: DocumentRegistry.Context;
     translator: ITranslator;
   }
 }

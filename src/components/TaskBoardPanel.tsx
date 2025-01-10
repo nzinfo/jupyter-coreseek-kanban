@@ -526,8 +526,8 @@ export class TaskBoardPanel extends SidePanel {
         new ToolbarButton({
           icon: addIcon,
           onClick: () => {
-            const currentContent = this._sharedModel.getSource();
-            this._sharedModel.setSource(currentContent + '\n- New task');
+            // const currentContent = this._sharedModel.getSource();
+            // this._sharedModel.setSource(currentContent + '\n- New task');
             console.log('Added new task to the model');
           },
           tooltip: this.trans.__('Add new task')

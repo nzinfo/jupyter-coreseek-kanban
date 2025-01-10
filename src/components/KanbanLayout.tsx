@@ -22,7 +22,10 @@ export class KanbanLayout extends SplitPanel {
     this._translator = options.translator || nullTranslator;
     
     // Create left panel widget
-    this._tasklistWidget = new TaskListPanel({ translator: this._translator });
+    this._tasklistWidget = new TaskListPanel({ 
+      context: options.context,
+      translator: this._translator,
+    });
     this._tasklistWidget.addClass('jp-KanbanLayout-right');
     
     // Create right panel widget

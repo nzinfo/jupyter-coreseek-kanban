@@ -2,24 +2,20 @@ import React from 'react';
 import { ReactWidget } from '@jupyterlab/ui-components';
 import { TranslationBundle } from '@jupyterlab/translation';
 import { addIcon, closeIcon, caretUpIcon, caretDownIcon, checkIcon } from '@jupyterlab/ui-components';
+import { YFile } from '@jupyter/ydoc';
+import { KanbanModel, KanbanSection, KanbanColumn } from '../model';
 
-interface IStage {
-  name: string;
-  categories: ICategory[];
-}
-
-interface ICategory {
-  name: string;
-}
+// KanbanStructure,
 
 interface IKanbanOptionsPanelProps {
   trans: TranslationBundle;
+  model: KanbanModel;
 }
 
 interface IEditState {
-  type: 'stage' | 'category';
+  type: 'section' | 'column';
   index: number;
-  categoryIndex?: number;
+  columnIndex?: number;
   isNew?: boolean;
   value: string;
 }
@@ -30,23 +26,24 @@ export class KanbanOptionsPanel extends ReactWidget {
     this._trans = options.trans;
     this.addClass('jp-KanbanOptions-panel');
 
-    // Initialize with some default stages and categories
-    this._stages = [
-      {
-        name: this._trans.__('Backlog'),
-        categories: [
-          { name: this._trans.__('Bug') },
-          { name: this._trans.__('Feature') }
-        ]
-      },
-      {
-        name: this._trans.__('In Progress'),
-        categories: []
-      }
-    ];
+    // Store the model
+    this._model = options.model;
+    this._sharedModel = (this._model.sharedModel as YFile);
+    
+    // Set up shared model change handling
+    this._model.changed.connect(() => {
+      this._updateFromModel();
+    });
+
+    this._sharedModel.changed.connect(() => {
+      this._updateFromModel();
+    });
 
     this._editState = null;
     this._inputRef = React.createRef<HTMLInputElement>();
+
+    // Initial update from model
+    this._updateFromModel();
   }
 
   componentDidUpdate() {
@@ -58,20 +55,23 @@ export class KanbanOptionsPanel extends ReactWidget {
   }
 
   protected render(): React.ReactElement<any> {
+    const sections = this._model.structure?.sections || [];
+    
     return (
       <div className="jp-KanbanOptions-container">
         <div className="jp-KanbanOptions-content">
           <div className="jp-KanbanOptions-stages">
-            {this._stages.map((stage, index) => this._renderStage(stage, index))}
+            {sections.map((section, index) => this._renderStage(section, index))}
           </div>
         </div>
       </div>
     );
   }
 
-  private _renderStage(stage: IStage, index: number): JSX.Element {
-    const isEditing = this._editState?.type === 'stage' && this._editState.index === index;
+  private _renderStage(section: KanbanSection, index: number): JSX.Element {
+    const isEditing = this._editState?.type === 'section' && this._editState.index === index;
     const showActions = !this._editState && !isEditing;
+    const sections = this._model.structure?.sections || [];
 
     return (
       <div key={index} className="jp-KanbanOptions-stage">
@@ -103,7 +103,7 @@ export class KanbanOptionsPanel extends ReactWidget {
                     className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
                     onClick={() => {
                       if (this._editState?.isNew) {
-                        this._stages.splice(this._editState.index, 1);
+                        // this._stages.splice(this._editState.index, 1);
                       }
                       this._editState = null;
                       this.update();
@@ -117,16 +117,16 @@ export class KanbanOptionsPanel extends ReactWidget {
             </>
           ) : (
             <>
-              <span onDoubleClick={() => this._startEdit('stage', index, stage.name)}>
-                {stage.name}
+              <span onDoubleClick={() => this._startEdit('section', index, section.title)}>
+                {section.title}
               </span>
               {showActions && (
                 <div className="jp-KanbanOptions-stage-actions">
                   <div className="jp-ToolbarButton jp-Toolbar-item">
                     <button 
                       className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                      onClick={() => this._addCategory(stage, index)}
-                      title={this._trans.__('Add Category')}
+                      onClick={() => this._addCategory(section, index)}
+                      title={this._trans.__('Add Section')}
                     >
                       <addIcon.react tag="span" className="jp-Icon" />
                     </button>
@@ -146,7 +146,7 @@ export class KanbanOptionsPanel extends ReactWidget {
                       className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
                       onClick={() => this._moveStage(index, 1)}
                       title={this._trans.__('Move Down')}
-                      disabled={index === this._stages.length - 1}
+                      disabled={index === sections.length - 1}
                     >
                       <caretDownIcon.react tag="span" className="jp-Icon" />
                     </button>
@@ -166,22 +166,22 @@ export class KanbanOptionsPanel extends ReactWidget {
           )}
         </div>
         <div className="jp-KanbanOptions-categories">
-          {stage.categories.map((category, categoryIndex) => 
-            this._renderCategory(category, index, categoryIndex)
+          {section.columns.map((column, columnIndex) => 
+            this._renderCategory(section, column, index, columnIndex)
           )}
         </div>
       </div>
     );
   }
 
-  private _renderCategory(category: ICategory, stageIndex: number, categoryIndex: number): JSX.Element {
-    const isEditing = this._editState?.type === 'category' && 
+  private _renderCategory(section: KanbanSection, column: KanbanColumn, stageIndex: number, columnIndex: number): JSX.Element {
+    const isEditing = this._editState?.type === 'column' && 
                      this._editState.index === stageIndex && 
-                     this._editState.categoryIndex === categoryIndex;
+                     this._editState.columnIndex === columnIndex;
     const showActions = !this._editState && !isEditing;
 
     return (
-      <div key={categoryIndex} className="jp-KanbanOptions-category">
+      <div key={columnIndex} className="jp-KanbanOptions-category">
         {isEditing ? (
           <>
             <input
@@ -209,7 +209,7 @@ export class KanbanOptionsPanel extends ReactWidget {
                   className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
                   onClick={() => {
                     if (this._editState?.isNew) {
-                      this._stages[stageIndex].categories.splice(categoryIndex, 1);
+                      // this._stages[stageIndex].columns.splice(categoryIndex, 1);
                     }
                     this._editState = null;
                     this.update();
@@ -223,17 +223,17 @@ export class KanbanOptionsPanel extends ReactWidget {
           </>
         ) : (
           <>
-            <span onDoubleClick={() => this._startEdit('category', stageIndex, category.name, categoryIndex)}>
-              {category.name}
+            <span onDoubleClick={() => this._startEdit('column', stageIndex, column.title, columnIndex)}>
+              {column.title}
             </span>
             {showActions && (
               <div className="jp-KanbanOptions-category-actions">
                 <div className="jp-ToolbarButton jp-Toolbar-item">
                   <button 
                     className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                    onClick={() => this._moveCategory(stageIndex, categoryIndex, -1)}
+                    onClick={() => this._moveCategory(stageIndex, columnIndex, -1)}
                     title={this._trans.__('Move Up')}
-                    disabled={categoryIndex === 0}
+                    disabled={columnIndex === 0}
                   >
                     <caretUpIcon.react tag="span" className="jp-Icon" />
                   </button>
@@ -241,9 +241,9 @@ export class KanbanOptionsPanel extends ReactWidget {
                 <div className="jp-ToolbarButton jp-Toolbar-item">
                   <button 
                     className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                    onClick={() => this._moveCategory(stageIndex, categoryIndex, 1)}
+                    onClick={() => this._moveCategory(stageIndex, columnIndex, 1)}
                     title={this._trans.__('Move Down')}
-                    disabled={categoryIndex === this._stages[stageIndex].categories.length - 1}
+                    disabled={columnIndex === section.columns.length - 1}
                   >
                     <caretDownIcon.react tag="span" className="jp-Icon" />
                   </button>
@@ -251,7 +251,7 @@ export class KanbanOptionsPanel extends ReactWidget {
                 <div className="jp-ToolbarButton jp-Toolbar-item">
                   <button 
                     className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                    onClick={() => this._confirmRemoveCategory(stageIndex, categoryIndex)}
+                    onClick={() => this._confirmRemoveCategory(stageIndex, columnIndex)}
                     title={this._trans.__('Remove Category')}
                   >
                     <closeIcon.react tag="span" className="jp-Icon" />
@@ -266,16 +266,16 @@ export class KanbanOptionsPanel extends ReactWidget {
   }
 
   private _startEdit = (
-    type: 'stage' | 'category',
+    type: 'section' | 'column',
     index: number,
     value: string,
-    categoryIndex?: number,
+    columnIndex?: number,
     isNew: boolean = false
   ): void => {
     this._editState = {
       type,
       index,
-      categoryIndex,
+      columnIndex,
       value,
       isNew
     };
@@ -297,10 +297,10 @@ export class KanbanOptionsPanel extends ReactWidget {
       this._commitEdit();
     } else if (event.key === 'Escape') {
       if (this._editState?.isNew) {
-        if (this._editState.type === 'stage') {
-          this._stages.splice(this._editState.index, 1);
+        if (this._editState.type === 'section') {
+          // this._stages.splice(this._editState.index, 1);
         } else {
-          this._stages[this._editState.index].categories.splice(this._editState.categoryIndex!, 1);
+          // this._stages[this._editState.index].columns.splice(this._editState.columnIndex!, 1);
         }
       }
       this._editState = null;
@@ -311,10 +311,10 @@ export class KanbanOptionsPanel extends ReactWidget {
   private _commitEdit = (): void => {
     if (!this._editState || !this._inputRef.current || !this._inputRef.current.value.trim()) {
       if (this._editState?.isNew) {
-        if (this._editState.type === 'stage') {
-          this._stages.splice(this._editState.index, 1);
+        if (this._editState.type === 'section') {
+          // this._stages.splice(this._editState.index, 1);
         } else {
-          this._stages[this._editState.index].categories.splice(this._editState.categoryIndex!, 1);
+          // this._stages[this._editState.index].columns.splice(this._editState.columnIndex!, 1);
         }
       }
       this._editState = null;
@@ -322,28 +322,32 @@ export class KanbanOptionsPanel extends ReactWidget {
       return;
     }
 
-    const { type, index, categoryIndex } = this._editState;
-    const value = this._inputRef.current.value.trim();
+    const { type } = this._editState;
+    // const { type, index, columnIndex } = this._editState;
+    // const value = this._inputRef.current.value.trim();
 
-    if (type === 'stage') {
-      this._stages[index].name = value;
-    } else if (type === 'category') {
-      this._stages[index].categories[categoryIndex!].name = value;
+    if (type === 'section') {
+      // this._stages[index].name = value;
+    } else if (type === 'column') {
+      // this._stages[index].columns[columnIndex!].name = value;
     }
 
     this._editState = null;
     this.update();
   };
 
-  private _addCategory = (stage: IStage, stageIndex: number): void => {
+  private _addCategory = (section: KanbanSection, stageIndex: number): void => {
+    /*
     const newCategory: ICategory = {
       name: ''
     };
-    stage.categories.push(newCategory);
-    this._startEdit('category', stageIndex, '', stage.categories.length - 1, true);
+    stage.columns.push(newCategory);
+    this._startEdit('column', stageIndex, '', stage.columns.length - 1, true);
+    */
   };
 
   private _moveStage = (index: number, direction: number): void => {
+    /*
     const newIndex = index + direction;
     if (newIndex >= 0 && newIndex < this._stages.length) {
       const stage = this._stages[index];
@@ -351,10 +355,12 @@ export class KanbanOptionsPanel extends ReactWidget {
       this._stages.splice(newIndex, 0, stage);
       this.update();
     }
+    */
   };
 
   private _moveCategory = (stageIndex: number, categoryIndex: number, direction: number): void => {
-    const categories = this._stages[stageIndex].categories;
+    /*
+    const categories = this._stages[stageIndex].columns;
     const newIndex = categoryIndex + direction;
     if (newIndex >= 0 && newIndex < categories.length) {
       const category = categories[categoryIndex];
@@ -362,34 +368,52 @@ export class KanbanOptionsPanel extends ReactWidget {
       categories.splice(newIndex, 0, category);
       this.update();
     }
+    */
   };
 
   private _confirmRemoveStage = (index: number): void => {
     if (confirm(this._trans.__('Are you sure you want to remove this stage? This action cannot be undone.'))) {
-      this._stages.splice(index, 1);
+      // this._stages.splice(index, 1);
       this.update();
     }
   };
 
   private _confirmRemoveCategory = (stageIndex: number, categoryIndex: number): void => {
     if (confirm(this._trans.__('Are you sure you want to remove this category? This action cannot be undone.'))) {
-      this._stages[stageIndex].categories.splice(categoryIndex, 1);
+      // this._stages[stageIndex].columns.splice(categoryIndex, 1);
       this.update();
     }
   };
 
   // Add a method to create a new stage
   addNewStage(): void {
+    /*
     const newStage: IStage = {
       name: '',
-      categories: []
+      columns: []
     };
     this._stages.push(newStage);
-    this._startEdit('stage', this._stages.length - 1, '', undefined, true);
+    this._startEdit('section', this._stages.length - 1, '', undefined, true);
+    */
   }
 
-  private _stages: IStage[];
+  private _updateFromModel(): void {
+    const structure = this._model.structure;
+    if (structure) {
+      /*
+      this._stages = structure.sections.map(section => ({
+        name: section.title,
+        columns: section.columns.map(column => ({ name: column.title }))
+      }));
+      */
+      this.update();
+    }
+  }
+
+  // private _stages: IStage[];
   private _editState: IEditState | null;
   private _inputRef: React.RefObject<HTMLInputElement>;
   private readonly _trans: TranslationBundle;
+  private _model: KanbanModel;
+  private _sharedModel: YFile;
 }
