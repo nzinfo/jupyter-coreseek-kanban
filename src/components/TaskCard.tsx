@@ -2,7 +2,7 @@ import { Widget } from '@lumino/widgets';
 import { DragDropManager } from './dragdrop';
 import { KanbanTask } from '../model';
 import { Signal } from '@lumino/signaling';
-import { editIcon } from '@jupyterlab/ui-components';
+import { editIcon, addIcon } from '@jupyterlab/ui-components';
 import { TaskCardEditor } from './TaskCardEditor';
 import { AssigneeSelector } from './AssigneeSelector';
 
@@ -74,19 +74,42 @@ export class TaskCard extends Widget {
     summary.className = 'jp-TaskCard-summary';
     summary.textContent = this._task.description;
     
-    const tagsContainer = document.createElement('div');
-    tagsContainer.className = 'jp-CellTags';
-    
-    this._task.tags.forEach(tag => {
-      const tagWidget = new CellTagComponent(tag);
-      tagsContainer.appendChild(tagWidget.node);
+    this._tagsContainer = document.createElement('div');
+    this._tagsContainer.className = 'jp-TaskCard-tags';
+
+    // Create add tag button
+    const addTagButton = document.createElement('div');
+    addTagButton.className = 'jp-TaskCard-tag jp-TaskCard-addTag';
+    const addIconElement = addIcon.element({
+      tag: 'span',
+      className: 'jp-TaskCard-addTagIcon'
     });
+    addTagButton.appendChild(addIconElement);
+    addTagButton.addEventListener('click', this._handleAddTagClick);
+    this._tagsContainer.appendChild(addTagButton);
+
+    // Create tag input container (hidden by default)
+    this._tagInputContainer = document.createElement('div');
+    this._tagInputContainer.className = 'jp-TaskCard-tagInput';
+    this._tagInputContainer.style.display = 'none';
+
+    const tagInput = document.createElement('input');
+    tagInput.type = 'text';
+    tagInput.className = 'jp-TaskCard-tagInputField';
+    tagInput.placeholder = 'Enter tag...';
+    tagInput.addEventListener('keydown', this._handleTagInputKeydown);
+    tagInput.addEventListener('blur', this._handleTagInputBlur);
+    this._tagInputContainer.appendChild(tagInput);
+    this._tagsContainer.appendChild(this._tagInputContainer);
+
+    // Render existing tags
+    this._renderTags();
 
     // 添加所有元素到卡片
     this.node.appendChild(this._commandsContainer);
     this.node.appendChild(header);
     this.node.appendChild(summary);
-    this.node.appendChild(tagsContainer);
+    this.node.appendChild(this._tagsContainer);
   }
 
   dispose(): void {
@@ -268,6 +291,69 @@ export class TaskCard extends Widget {
     document.body.appendChild(editor.node);
   };
 
+  private _renderTags(): void {
+    // Clear existing tags (except add button and input)
+    const children = Array.from(this._tagsContainer.children);
+    children.forEach(child => {
+      if (!child.classList.contains('jp-TaskCard-addTag') && 
+          !child.classList.contains('jp-TaskCard-tagInput')) {
+        child.remove();
+      }
+    });
+
+    // Add tags after the add button
+    this._task.tags?.forEach(tag => {
+      const tagElement = document.createElement('div');
+      tagElement.className = 'jp-TaskCard-tag';
+      tagElement.textContent = tag;
+      // Insert after add button but before any existing tags
+      this._tagsContainer.insertBefore(
+        tagElement,
+        this._tagInputContainer
+      );
+    });
+  }
+
+  private _handleAddTagClick = (): void => {
+    this._tagInputContainer.style.display = 'block';
+    const input = this._tagInputContainer.querySelector('input');
+    if (input) {
+      input.focus();
+    }
+  };
+
+  private _handleTagInputKeydown = (event: KeyboardEvent): void => {
+    const input = event.target as HTMLInputElement;
+    if (event.key === 'Enter' && input.value.trim()) {
+      this._addTag(input.value.trim());
+      input.value = '';
+      this._tagInputContainer.style.display = 'none';
+    } else if (event.key === 'Escape') {
+      input.value = '';
+      this._tagInputContainer.style.display = 'none';
+    }
+  };
+
+  private _handleTagInputBlur = (event: FocusEvent): void => {
+    const input = event.target as HTMLInputElement;
+    if (input.value.trim()) {
+      this._addTag(input.value.trim());
+    }
+    input.value = '';
+    this._tagInputContainer.style.display = 'none';
+  };
+
+  private _addTag(tag: string): void {
+    if (!this._task.tags) {
+      this._task.tags = [];
+    }
+    if (!this._task.tags.includes(tag)) {
+      this._task.tags.push(tag);
+      this._renderTags();
+      this.taskChanged.emit(this._task);
+    }
+  }
+
   readonly taskChanged = new Signal<this, KanbanTask>(this);
 
   private _task: KanbanTask;
@@ -278,21 +364,6 @@ export class TaskCard extends Widget {
   private _assigneeSelector: AssigneeSelector;
   private _taskChanged = this.taskChanged;
   private _editorServices: any;
-}
-
-interface ITaskCardOptions {
-  task: KanbanTask;
-}
-
-class CellTagComponent extends Widget {
-  constructor(name: string) {
-    super();
-    this.addClass('jp-CellTag');
-    
-    const tagName = document.createElement('span');
-    tagName.className = 'jp-CellTag-label';
-    tagName.textContent = name;
-    
-    this.node.appendChild(tagName);
-  }
+  private _tagsContainer: HTMLElement;
+  private _tagInputContainer: HTMLElement;
 }
