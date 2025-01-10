@@ -1,0 +1,63 @@
+.jp-AssigneeSelector {
+  position: relative;
+  display: inline-block;
+}
+
+.jp-AssigneeSelector-current {
+  cursor: pointer;
+}
+
+.jp-AssigneeSelector-current:hover .jp-TaskCard-avatar {
+  opacity: 0.8;
+}
+
+.jp-AssigneeSelector-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background-color: var(--jp-layout-color1);
+  border: 1px solid var(--jp-border-color1);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  z-index: 1000;
+}
+
+.jp-AssigneeSelector-search {
+  padding: 8px;
+  border-bottom: 1px solid var(--jp-border-color1);
+}
+
+.jp-AssigneeSelector-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.jp-AssigneeSelector-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  cursor: pointer;
+  gap: 8px;
+}
+
+.jp-AssigneeSelector-item:hover {
+  background-color: var(--jp-layout-color2);
+}
+
+.jp-AssigneeSelector-item.jp-mod-selected {
+  background-color: var(--jp-brand-color1);
+  color: white;
+}
+
+.jp-AssigneeSelector-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jp-TaskCard-avatar-empty {
+  opacity: 0.5;
+}

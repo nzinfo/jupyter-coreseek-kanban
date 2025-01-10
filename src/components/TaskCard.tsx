@@ -4,27 +4,11 @@ import { KanbanTask } from '../model';
 import { Signal } from '@lumino/signaling';
 import { editIcon } from '@jupyterlab/ui-components';
 import { TaskCardEditor } from './TaskCardEditor';
+import { AssigneeSelector } from './AssigneeSelector';
 
 interface ITaskCardOptions {
   task: KanbanTask;
-  editorServices?: any; // TODO: 添加正确的类型
-}
-
-interface ITaskCardOptions {
-  task: KanbanTask;
-}
-
-class CellTagComponent extends Widget {
-  constructor(name: string) {
-    super();
-    this.addClass('jp-CellTag');
-    
-    const tagName = document.createElement('span');
-    tagName.className = 'jp-CellTag-label';
-    tagName.textContent = name;
-    
-    this.node.appendChild(tagName);
-  }
+  editorServices?: any;
 }
 
 export class TaskCard extends Widget {
@@ -74,18 +58,18 @@ export class TaskCard extends Widget {
     this._renderTitle();
     header.appendChild(this._titleContainer);
 
-    let avatar: HTMLElement;
-    if (this._task && this._task.assignee) {
-      // 如果没有头像URL，创建一个显示首字母的div
-      avatar = document.createElement('div');
-      // FIXME: 中英文对应的 textContent 不同
-      avatar.textContent = this._task.assignee[0].name.charAt(0);
-      avatar.className = 'jp-TaskCard-avatar';
-      avatar.title = this._task.assignee[0].name;
-
-      header.appendChild(avatar);
+    // 创建并初始化 AssigneeSelector
+    this._assigneeSelector = new AssigneeSelector();
+    this._assigneeSelector.setAssignees([
+      { name: 'Tom' },
+      { name: 'Jerry' }
+    ]);
+    if (this._task.assignee && this._task.assignee.length > 0) {
+      this._assigneeSelector.setCurrentAssignee(this._task.assignee[0]);
     }
-    
+    this._assigneeSelector.assigneeChanged.connect(this._handleAssigneeChange);
+    header.appendChild(this._assigneeSelector.node);
+
     const summary = document.createElement('div');
     summary.className = 'jp-TaskCard-summary';
     summary.textContent = this._task.description;
@@ -97,12 +81,20 @@ export class TaskCard extends Widget {
       const tagWidget = new CellTagComponent(tag);
       tagsContainer.appendChild(tagWidget.node);
     });
-    
-    // 将命令容器添加到卡片
+
+    // 添加所有元素到卡片
     this.node.appendChild(this._commandsContainer);
     this.node.appendChild(header);
     this.node.appendChild(summary);
     this.node.appendChild(tagsContainer);
+  }
+
+  dispose(): void {
+    if (this.isDisposed) {
+      return;
+    }
+    this._assigneeSelector.dispose();
+    super.dispose();
   }
 
   private _setDraggable(draggable: boolean): void {
@@ -169,6 +161,11 @@ export class TaskCard extends Widget {
     }
   }
 
+  private _handleAssigneeChange = (sender: AssigneeSelector, assignee: { name: string; profile?: string }): void => {
+    this._task.assignee = [assignee];
+    this.taskChanged.emit(this._task);
+  };
+
   private _onTitleClick = (event: MouseEvent): void => {
     this._editState = { value: this._task.title };
     this._renderTitle();
@@ -219,7 +216,7 @@ export class TaskCard extends Widget {
         if (!this._isEditing) {
           this.handleDragEnd(event as DragEvent);
         }
-        break;
+        break
     }
   }
 
@@ -278,6 +275,24 @@ export class TaskCard extends Widget {
   private _isEditing: boolean;
   private _titleContainer: HTMLElement;
   private _commandsContainer: HTMLElement;
+  private _assigneeSelector: AssigneeSelector;
   private _taskChanged = this.taskChanged;
   private _editorServices: any;
+}
+
+interface ITaskCardOptions {
+  task: KanbanTask;
+}
+
+class CellTagComponent extends Widget {
+  constructor(name: string) {
+    super();
+    this.addClass('jp-CellTag');
+    
+    const tagName = document.createElement('span');
+    tagName.className = 'jp-CellTag-label';
+    tagName.textContent = name;
+    
+    this.node.appendChild(tagName);
+  }
 }
