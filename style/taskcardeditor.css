@@ -1,0 +1,84 @@
+.jp-TaskCardEditor-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.jp-TaskCardEditor-container {
+  background-color: var(--jp-layout-color1);
+  border-radius: 3px;
+  box-shadow: var(--jp-elevation-z6);
+  margin: 20px;
+  min-width: 300px;
+  max-width: 500px;
+}
+
+.jp-TaskCardEditor-panel {
+  border-bottom: 1px solid var(--jp-border-color2);
+}
+
+.jp-TaskCardEditor-panel:last-child {
+  border-bottom: none;
+}
+
+.jp-TaskCardEditor-content {
+  padding: 16px;
+}
+
+.jp-TaskCardEditor-field {
+  margin-bottom: 16px;
+}
+
+.jp-TaskCardEditor-field:last-child {
+  margin-bottom: 0;
+}
+
+.jp-TaskCardEditor-field label {
+  display: block;
+  font-size: var(--jp-ui-font-size1);
+  color: var(--jp-ui-font-color0);
+  margin-bottom: 4px;
+}
+
+.jp-TaskCardEditor-input {
+  width: 100%;
+  padding: 4px 8px;
+  font-size: var(--jp-ui-font-size1);
+  border: 1px solid var(--jp-border-color1);
+  border-radius: 3px;
+  background-color: var(--jp-layout-color1);
+  color: var(--jp-ui-font-color0);
+}
+
+.jp-TaskCardEditor-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 4px 8px;
+  font-size: var(--jp-ui-font-size1);
+  border: 1px solid var(--jp-border-color1);
+  border-radius: 3px;
+  background-color: var(--jp-layout-color1);
+  color: var(--jp-ui-font-color0);
+  resize: vertical;
+}
+
+.jp-TaskCardEditor-addTag {
+  margin-top: 8px;
+  padding: 4px 8px;
+  font-size: var(--jp-ui-font-size1);
+  color: var(--jp-brand-color1);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.jp-TaskCardEditor-addTag:hover {
+  color: var(--jp-brand-color0);
+}

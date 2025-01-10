@@ -3,6 +3,12 @@ import { DragDropManager } from './dragdrop';
 import { KanbanTask } from '../model';
 import { Signal } from '@lumino/signaling';
 import { editIcon } from '@jupyterlab/ui-components';
+import { TaskCardEditor } from './TaskCardEditor';
+
+interface ITaskCardOptions {
+  task: KanbanTask;
+  editorServices?: any; // TODO: 添加正确的类型
+}
 
 interface ITaskCardOptions {
   task: KanbanTask;
@@ -27,6 +33,7 @@ export class TaskCard extends Widget {
     this._task = options.task;
     this._editState = null;
     this._isEditing = false;
+    this._editorServices = options.editorServices;
     
     this.addClass('jp-TaskCard');
     
@@ -238,8 +245,30 @@ export class TaskCard extends Widget {
 
   private _onEditClick = (event: MouseEvent): void => {
     event.stopPropagation();
-    this._editState = { value: this._task.title };
-    this._renderTitle();
+    
+    // 获取按钮的位置
+    const buttonRect = (event.target as HTMLElement).getBoundingClientRect();
+    
+    // 创建编辑器
+    const editor = new TaskCardEditor({
+      task: this._task,
+      editorServices: this._editorServices
+    });
+    
+    // 设置编辑器位置
+    editor.container.node.style.position = 'absolute';
+    editor.container.node.style.left = `${buttonRect.left}px`;
+    editor.container.node.style.top = `${buttonRect.bottom + 4}px`;
+    
+    // 监听任务更改
+    editor.taskChanged.connect((_, task) => {
+      this._task = task;
+      this._taskChanged.emit(task);
+      this._renderTitle();
+    });
+    
+    // 添加到 body
+    document.body.appendChild(editor.node);
   };
 
   readonly taskChanged = new Signal<this, KanbanTask>(this);
@@ -250,4 +279,5 @@ export class TaskCard extends Widget {
   private _titleContainer: HTMLElement;
   private _commandsContainer: HTMLElement;
   private _taskChanged = this.taskChanged;
+  private _editorServices: any;
 }
