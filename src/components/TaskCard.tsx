@@ -18,7 +18,7 @@ export class TaskCard extends Widget {
     this._task = options.task;
     this._editState = null;
     this._isEditing = false;
-    this._editorServices = options.editorServices;
+    // this._editorServices = options.editorServices;
     
     this.addClass('jp-TaskCard');
     
@@ -281,7 +281,7 @@ export class TaskCard extends Widget {
     // Create editor
     const editor = new TaskCardEditor({
       task: this._task,
-      editorServices: this._editorServices
+      // editorServices: this._editorServices
     });
     
     // Calculate available space
@@ -393,5 +393,5 @@ export class TaskCard extends Widget {
   private _tagSelector: TagSelector;
   private _tagsContainer: HTMLElement;
   private _taskChanged = this.taskChanged;
-  private _editorServices: any;
+  // private _editorServices: any;
 }
