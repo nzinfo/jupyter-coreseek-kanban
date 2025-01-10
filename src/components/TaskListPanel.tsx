@@ -79,6 +79,7 @@ export class TaskListPanel extends SidePanel {
     // Create backlog column
     this._backlogColumn = new TaskColumn(this.trans, {
       title: 'Backlog',
+      lineNo: 0,
       tasks: []
     });
 
@@ -92,6 +93,7 @@ export class TaskListPanel extends SidePanel {
     
     this._doneColumn = new TaskColumn(this.trans, {
       title: 'Done',
+      lineNo: 0,
       tasks: []
     });
     donePanel.addWidget(this._doneColumn);

@@ -59,11 +59,18 @@ class TaskBoardHeader extends ReactWidget {
     this._inputRef = React.createRef<HTMLInputElement>();
     this._title = this.trans.__('Task Board');
     this._isEditMode = false;
+    this._onTitleChange = null;
+    this._onTasklistToggle = null;
+    this._onHeaderClick = null;
   }
 
   setTitle(title: string) {
     this._title = title;
     this.update();
+  }
+
+  setTitleChangeCallback(callback: (newTitle: string) => void): void {
+    this._onTitleChange = callback;
   }
 
   componentDidUpdate() {
@@ -159,8 +166,12 @@ class TaskBoardHeader extends ReactWidget {
       return;
     }
 
-    // TODO: Implement actual title change logic here
-    console.log('New title:', this._inputRef.current.value.trim());
+    const newTitle = this._inputRef.current.value.trim();
+
+    // Call the title change callback if it exists
+    if (this._onTitleChange) {
+      this._onTitleChange(newTitle);
+    }
     
     this._editState = null;
     this.update();
@@ -192,6 +203,7 @@ class TaskBoardHeader extends ReactWidget {
   private _tasklistVisible: boolean;
   private _onTasklistToggle: ((visible: boolean) => void) | null = null;
   private _onHeaderClick: (() => void) | null = null;
+  private _onTitleChange: ((newTitle: string) => void) | null = null;
   private _editState: { value: string } | null;
   private _inputRef: React.RefObject<HTMLInputElement>;
   private _title: string;
@@ -208,6 +220,7 @@ class TaskBoardContent extends Panel {
     this._trans = options.trans;
     this._section = options.section || {
       title: 'main',
+      lineNo: 0,
       columns: []
     };
     this._createColumns();
@@ -338,6 +351,16 @@ export class TaskBoardPanel extends SidePanel {
       }
     });
     
+    this._task_header.setTitleChangeCallback((newTitle) => {
+      // this._model.structure.title = newTitle;
+      // this._model.save();
+      // TODO: 根据行号 定位 文本 并 计算需要更新的范围
+      const title_line_no = this._model.structure?.lineNo || 0;
+      const range = this._model.getTextRanges([title_line_no])[0];
+      this._model.sharedModel.updateSource(range.start, range.end, 
+        `# ${newTitle}`);
+    });
+
     this._task_header.setHeaderClickCallback(() => {
       if (this._isDescriptionEditorOpen) {
         // Save and close editor

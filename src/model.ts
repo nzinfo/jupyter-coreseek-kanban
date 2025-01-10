@@ -55,16 +55,19 @@ export interface KanbanHeading {
 
 export interface KanbanColumn {
   title: string;
+  lineNo: number;
   tasks: KanbanTask[];
 }
 
 export interface KanbanSection {
   title: string;
+  lineNo: number;
   columns: KanbanColumn[];
 }
 
 export interface KanbanStructure {
   title: string;
+  lineNo: number;
   sections: KanbanSection[];
 }
 
@@ -214,6 +217,34 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
   }
 
   /**
+   * Get text ranges for specified line numbers
+   * @param line_numbers Array of line numbers to get text ranges for
+   * @returns Array of text ranges with start and end positions
+   */
+  public getTextRanges(line_numbers: number[]): { start: number; end: number }[] {
+    const content = this._sharedModel.getSource();
+
+    // Create a global regular expression to match the entire line
+    const lineRegex = /^(.*)$/gm;
+    const matches = [...content.matchAll(lineRegex)];
+    
+    return line_numbers.map(lineNo => {
+      // Ensure line number is valid
+      if (lineNo < 0 || lineNo >= matches.length) {
+        throw new Error(`Invalid line number: ${lineNo}`);
+      }
+      
+      // Find the match for the specific line number
+      const match = matches[lineNo];
+      const start = match.index || 0;
+      const end = (matches[lineNo + 1]?.index || content.length + 1) - 1;
+      
+      // Return start and end positions
+      return { start, end};
+    });
+  }
+
+  /**
    * 解析文档中的标题结构
    */
   private _parseStructure(): void {
@@ -241,13 +272,15 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
     // 构建看板结构
     const structure: KanbanStructure = {
       title: '',
-      sections: []
+      lineNo: 0,
+      sections: [],
     };
 
     // 第一个一级标题作为看板标题
     const firstH1 = headings.find(h => h.level === 1);
     if (firstH1) {
       structure.title = firstH1.text;
+      structure.lineNo = firstH1.lineStart;
     }
 
     // 处理其他一级标题作为分组，其下的二级标题作为列
@@ -268,12 +301,14 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
         }
         currentSection = {
           title: heading.text,
+          lineNo: heading.lineStart,
           columns: []
         };
         currentColumn = null;
       } else if (heading.level === 2 && currentSection) {
         currentColumn = {
           title: heading.text,
+          lineNo: heading.lineStart,
           tasks: []
         };
         currentSection.columns.push(currentColumn);
