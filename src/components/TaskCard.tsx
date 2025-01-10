@@ -63,7 +63,17 @@ export class TaskCard extends Widget {
     this._assigneeSelector = new AssigneeSelector();
     this._assigneeSelector.setAssignees([
       { name: 'Tom' },
-      { name: 'Jerry' }
+      { name: 'Jerry' },
+      { name: 'Spike' },
+      { name: 'Morty' },
+      { name: 'Bender' },
+      { name: 'Fry' },
+      { name: 'Leela' },
+      { name: 'Homer' },
+      { name: 'Maggie' },
+      { name: 'Moe' },
+      { name: 'Bart' },
+      { name: 'Lisa' },
     ]);
     if (this._task.assignee && this._task.assignee.length > 0) {
       this._assigneeSelector.setCurrentAssignee(this._task.assignee[0]);
@@ -354,7 +364,11 @@ export class TaskCard extends Widget {
     }
 
     // Add some demo tags (这里应该从外部获取所有可用的标签)
-    ['bug', 'feature', 'documentation', 'enhancement'].forEach(tag => 
+    ['bug', 'feature', 'documentation', 'enhancement',
+      'updated', 'both', 'selector', 'components', 'to', 
+      'handle', 'scrolling', 'maximum', 'height', 'and', 
+      'scrolling'
+    ].forEach(tag => 
       availableTags.add(tag)
     );
     

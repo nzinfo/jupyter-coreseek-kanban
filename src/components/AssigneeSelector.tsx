@@ -1,6 +1,7 @@
 import { Widget } from '@lumino/widgets';
 import { Signal } from '@lumino/signaling';
 import { searchIcon } from '@jupyterlab/ui-components';
+import { calculateDropdownPosition } from '../utils/positioning';
 
 interface Assignee {
   name: string;
@@ -165,15 +166,13 @@ export class AssigneeSelector extends Widget {
   };
 
   private _showDropdown(): void {
-    // Position dropdown relative to current display
-    const rect = this._currentContainer.getBoundingClientRect();
+    const position = calculateDropdownPosition(this._currentContainer, this._dropdownContainer);
+    
     this._dropdownContainer.style.position = 'fixed';
-    this._dropdownContainer.style.top = `${rect.bottom}px`;
-    this._dropdownContainer.style.left = `${rect.left}px`;
+    Object.assign(this._dropdownContainer.style, position);
     this._dropdownContainer.style.display = 'block';
-    this._searchInput.value = '';
-    this._searchTerm = '';
-    this._renderList();
+    
+    // Focus search input
     this._searchInput.focus();
   }
 

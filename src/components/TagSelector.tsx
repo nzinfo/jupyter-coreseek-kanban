@@ -1,6 +1,7 @@
 import { Widget } from '@lumino/widgets';
 import { Signal } from '@lumino/signaling';
 import { addIcon, checkIcon, searchIcon } from '@jupyterlab/ui-components';
+import { calculateDropdownPosition } from '../utils/positioning';
 
 interface Tag {
   name: string;
@@ -94,12 +95,13 @@ export class TagSelector extends Widget {
   };
 
   private _showDropdown(): void {
-    // Position dropdown relative to current display
-    const rect = this._currentDisplay.getBoundingClientRect();
+    const position = calculateDropdownPosition(this._currentDisplay, this._dropdown);
+    
     this._dropdown.style.position = 'fixed';
-    this._dropdown.style.top = `${rect.bottom}px`;
-    this._dropdown.style.left = `${rect.left}px`;
+    Object.assign(this._dropdown.style, position);
     this._dropdown.style.display = 'block';
+    
+    // Focus search input
     this._searchInput.focus();
   }
 
