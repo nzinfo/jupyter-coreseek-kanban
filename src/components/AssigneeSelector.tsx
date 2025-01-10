@@ -1,5 +1,6 @@
 import { Widget } from '@lumino/widgets';
 import { Signal } from '@lumino/signaling';
+import { searchIcon } from '@jupyterlab/ui-components';
 
 interface Assignee {
   name: string;
@@ -16,13 +17,29 @@ export class AssigneeSelector extends Widget {
     this._dropdownContainer.className = 'jp-AssigneeSelector-dropdown';
     this._dropdownContainer.style.display = 'none';
     
+    // Create search input wrapper
+    const searchWrapper = document.createElement('div');
+    searchWrapper.className = 'jp-AssigneeSelector-search-wrapper';
+
+    // Add search icon
+    const searchIconElement = searchIcon.element({
+      className: 'searchIcon'
+    });
+    searchIconElement.classList.add('jp-AssigneeSelector-searchIcon');
+    searchWrapper.appendChild(searchIconElement);
+    
     // Create search input
     this._searchInput = document.createElement('input');
     this._searchInput.className = 'jp-AssigneeSelector-search';
+    this._searchInput.type = 'text';
     this._searchInput.placeholder = 'Search assignees...';
+    this._searchInput.spellcheck = false;
     this._searchInput.addEventListener('input', this._handleSearch);
     this._searchInput.addEventListener('keydown', this._handleKeyDown);
-    this._dropdownContainer.appendChild(this._searchInput);
+    searchWrapper.appendChild(this._searchInput);
+    
+    // Add search wrapper to dropdown
+    this._dropdownContainer.appendChild(searchWrapper);
     
     // Create list container
     this._listContainer = document.createElement('div');
