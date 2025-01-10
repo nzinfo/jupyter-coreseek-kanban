@@ -30,13 +30,13 @@ export class TaskListPanel extends SidePanel {
     optionsPanel.title.label = this.trans.__('Kanban Settings');
     // Add new task button to toolbar
     optionsPanel.toolbar.addItem(
-      'newStage',
+      'newSection',
       new ToolbarButton({
         icon: addIcon,
         onClick: () => {
-          this._optionsWidget.addNewStage();
+          this._optionsWidget.addNewSection();
         },
-        tooltip: this.trans.__('Add new stage')
+        tooltip: this.trans.__('Add new section')
       })
     );
     this._optionsWidget = new KanbanOptionsPanel({
