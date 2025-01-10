@@ -354,7 +354,6 @@ export class TaskBoardPanel extends SidePanel {
     this._task_header.setTitleChangeCallback((newTitle) => {
       // this._model.structure.title = newTitle;
       // this._model.save();
-      // TODO: 根据行号 定位 文本 并 计算需要更新的范围
       const title_line_no = this._model.structure?.lineNo || 0;
       const range = this._model.getTextRanges([title_line_no])[0];
       this._model.sharedModel.updateSource(range.start, range.end, 

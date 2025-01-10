@@ -77,7 +77,7 @@ export class KanbanOptionsPanel extends ReactWidget {
     const sections = this._model.structure?.sections || [];
     const columns = [
       ...section.columns,
-      ...this._editing_columns
+      ...this._editing_columns_in_section === section ? this._editing_columns : []
     ];
 
     return (
@@ -132,8 +132,8 @@ export class KanbanOptionsPanel extends ReactWidget {
                   <div className="jp-ToolbarButton jp-Toolbar-item">
                     <button 
                       className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                      onClick={() => this._addSection(section, index)}
-                      title={this._trans.__('Add Section')}
+                      onClick={() => this._addColumn(section, index)}
+                      title={this._trans.__('Add Column')}
                     >
                       <addIcon.react tag="span" className="jp-Icon" />
                     </button>
@@ -161,8 +161,8 @@ export class KanbanOptionsPanel extends ReactWidget {
                   <div className="jp-ToolbarButton jp-Toolbar-item">
                     <button 
                       className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                      onClick={() => this._confirmRemoveStage(index)}
-                      title={this._trans.__('Remove Stage')}
+                      onClick={() => this._confirmRemoveSection(index)}
+                      title={this._trans.__('Remove Section')}
                     >
                       <closeIcon.react tag="span" className="jp-Icon" />
                     </button>
@@ -238,7 +238,7 @@ export class KanbanOptionsPanel extends ReactWidget {
                 <div className="jp-ToolbarButton jp-Toolbar-item">
                   <button 
                     className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                    onClick={() => this._moveCategory(stageIndex, columnIndex, -1)}
+                    onClick={() => this._moveColumn(stageIndex, columnIndex, -1)}
                     title={this._trans.__('Move Up')}
                     disabled={columnIndex === 0}
                   >
@@ -248,7 +248,7 @@ export class KanbanOptionsPanel extends ReactWidget {
                 <div className="jp-ToolbarButton jp-Toolbar-item">
                   <button 
                     className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                    onClick={() => this._moveCategory(stageIndex, columnIndex, 1)}
+                    onClick={() => this._moveColumn(stageIndex, columnIndex, 1)}
                     title={this._trans.__('Move Down')}
                     disabled={columnIndex === section.columns.length - 1}
                   >
@@ -258,8 +258,8 @@ export class KanbanOptionsPanel extends ReactWidget {
                 <div className="jp-ToolbarButton jp-Toolbar-item">
                   <button 
                     className="jp-ToolbarButtonComponent jp-mod-minimal jp-Button"
-                    onClick={() => this._confirmRemoveCategory(stageIndex, columnIndex)}
-                    title={this._trans.__('Remove Category')}
+                    onClick={() => this._confirmRemoveColumn(stageIndex, columnIndex)}
+                    title={this._trans.__('Remove Column')}
                   >
                     <closeIcon.react tag="span" className="jp-Icon" />
                   </button>
@@ -305,8 +305,10 @@ export class KanbanOptionsPanel extends ReactWidget {
     } else if (event.key === 'Escape') {
       if (this._editState?.isNew) {
         if (this._editState.type === 'section') {
+          this._editing_sections = [];  // 放弃修改
           // this._stages.splice(this._editState.index, 1);
         } else {
+          this._editing_columns = [];  // 放弃修改
           // this._stages[this._editState.index].columns.splice(this._editState.columnIndex!, 1);
         }
       }
@@ -316,11 +318,14 @@ export class KanbanOptionsPanel extends ReactWidget {
   };
 
   private _commitEdit = (): void => {
+    
     if (!this._editState || !this._inputRef.current || !this._inputRef.current.value.trim()) {
       if (this._editState?.isNew) {
         if (this._editState.type === 'section') {
+          this._editing_sections = [];  // 放弃修改
           // this._stages.splice(this._editState.index, 1);
         } else {
+          this._editing_columns = [];  
           // this._stages[this._editState.index].columns.splice(this._editState.columnIndex!, 1);
         }
       }
@@ -329,65 +334,234 @@ export class KanbanOptionsPanel extends ReactWidget {
       return;
     }
 
-    const { type } = this._editState;
-    // const { type, index, columnIndex } = this._editState;
-    // const value = this._inputRef.current.value.trim();
+    const { index, columnIndex } = this._editState;
+    const value = this._inputRef.current.value.trim();
 
-    if (type === 'section') {
-      // this._stages[index].name = value;
-    } else if (type === 'column') {
-      // this._stages[index].columns[columnIndex!].name = value;
+    if (this._editState?.isNew) {
+      // 处理新增
+      if (this._editState.type === 'section') {
+        const source = this._model.sharedModel.getSource();
+        this._model.sharedModel.updateSource(source.length, source.length, 
+          `\n\n# ${value}\n\n`);
+        this._editing_sections = [];  
+      } else {
+        const sections = this._model.structure?.sections || [];
+        // 如果是最后一个 section
+        if (index == sections.length - 1) {
+          const source = this._model.sharedModel.getSource();
+          this._model.sharedModel.updateSource(source.length, source.length, 
+            `\n## ${value}\n\n`);
+        } else {
+          // 下一个 section 之前插入
+          const nextSection = sections[index + 1];
+          const range = this._model.getTextRanges([nextSection.lineNo]);
+          this._model.sharedModel.updateSource(range[0].start, range[0].start, 
+            `## ${value}\n\n`);  // 不必增加 \n， range[0].start 已经是行首
+        }
+        this._editing_columns = [];  
+      }
+    } else {
+      // 处理修改
+      if (this._editState.type === 'section') {
+        const section = this._model.structure?.sections?.[index] || null;
+        if (section) {
+          const range = this._model.getTextRanges([section.lineNo]);
+          this._model.sharedModel.updateSource(range[0].start, range[0].end, 
+            `# ${value}`);
+          // section.title = value;
+        }
+      } else if (this._editState.type === 'column') {
+        // this._stages[index].columns[columnIndex!].name = value;
+        const section = this._model.structure?.sections?.[index] || null;
+        if (section) {
+          const column = section.columns[columnIndex!];
+          const range = this._model.getTextRanges([column.lineNo]);
+          this._model.sharedModel.updateSource(range[0].start, range[0].end, 
+            `## ${value}`);
+        }
+      }
     }
 
     this._editState = null;
     this.update();
   };
 
-  private _addSection = (section: KanbanSection, stageIndex: number): void => {
-    /*
-    const newCategory: ICategory = {
-      name: ''
+  private _addColumn = (section: KanbanSection, stageIndex: number): void => {
+    const newColumn: KanbanColumn = {
+      title: '',
+      lineNo: -1,
+      tasks: []
     };
-    stage.columns.push(newCategory);
-    this._startEdit('column', stageIndex, '', stage.columns.length - 1, true);
-    */
+
+    this._editing_columns.push(newColumn);
+    this._editing_columns_in_section = section;
+    this._startEdit('column', stageIndex, '', section.columns.length, true);
   };
 
   private _moveSection = (index: number, direction: number): void => {
-    /*
+    const sections = this._model.structure?.sections || [];
+    const source = this._model.sharedModel.getSource();
+
+    // 我们实际上只处理一种情况，移动到文档上方的某个位置
+    if (direction == 1) {
+      // TODO: report error if direction not  1, -1
+      return this._moveSection(index + direction, -1);
+    }
+
     const newIndex = index + direction;
-    if (newIndex >= 0 && newIndex < this._stages.length) {
-      const stage = this._stages[index];
-      this._stages.splice(index, 1);
-      this._stages.splice(newIndex, 0, stage);
+    if (newIndex >= 0 && newIndex < sections.length) {
+      const section = sections[index];
+      const targetSection = sections[newIndex];
+      const ranges = this._model.getTextRanges([section.lineNo, targetSection.lineNo]);
+      // 尝试获取 section 的 范围 借助 find 方法
+      let sectionEnd = source.indexOf("\n# ", ranges[0].start);
+      if (sectionEnd == -1) {
+        sectionEnd = source.length;
+      }
+
+      const sectionText = source.slice(ranges[0].start, sectionEnd);
+      // 删除 section , ranges[0].start ~ sectionEnd
+      this._model.sharedModel.updateSource(
+        ranges[0].start, 
+        sectionEnd, 
+        ''
+      );
+      // TODO: 添加 section 到新位置 
+      this._model.sharedModel.updateSource(
+        ranges[1].start, 
+        ranges[1].start, 
+        sectionText
+      );
+
       this.update();
     }
-    */
   };
 
-  private _moveCategory = (stageIndex: number, categoryIndex: number, direction: number): void => {
-    /*
-    const categories = this._stages[stageIndex].columns;
-    const newIndex = categoryIndex + direction;
-    if (newIndex >= 0 && newIndex < categories.length) {
-      const category = categories[categoryIndex];
-      categories.splice(categoryIndex, 1);
-      categories.splice(newIndex, 0, category);
+  private _moveColumn = (sectionIndex: number, columnIndex: number, direction: number): void => {
+    const sections = this._model.structure?.sections || [];
+    const source = this._model.sharedModel.getSource();
+
+    // 我们实际上只处理一种情况，移动到文档上方的某个位置
+    if (direction == 1) {
+      // TODO: report error if direction not  1, -1
+      return this._moveColumn(sectionIndex, columnIndex + direction, -1);
+    }
+
+    const newIndex = columnIndex + direction;
+    if (newIndex >= 0 && newIndex < sections[sectionIndex].columns.length) {
+      const column = sections[sectionIndex].columns[columnIndex];
+      const targetColumn = sections[sectionIndex].columns[newIndex];
+      const ranges = this._model.getTextRanges([column.lineNo, targetColumn.lineNo]);
+      // 尝试获取 section 的 范围 借助 find 方法
+      let sectionEnd = source.indexOf("\n# ", ranges[0].start);
+      if (sectionEnd == -1) {
+        sectionEnd = source.length-1;
+      }
+
+      // 尝试获取 column 的 范围 借助 find 方法
+      let columnEnd = source.indexOf("\n## ", ranges[0].start);
+      if (columnEnd == -1) {
+        columnEnd = source.length-1;
+      }
+
+      if (columnEnd > sectionEnd) {
+        // 以 section 为边界
+        columnEnd = sectionEnd;
+      }
+
+      columnEnd += 1; // 包括换行
+
+      const columnText = source.slice(ranges[0].start, columnEnd);
+      // 删除 section , ranges[0].start ~ sectionEnd
+      this._model.sharedModel.updateSource(
+        ranges[0].start, 
+        columnEnd, 
+        ''
+      );
+      // TODO: 添加 section 到新位置 
+      this._model.sharedModel.updateSource(
+        ranges[1].start, 
+        ranges[1].start, 
+        columnText
+      );
+
       this.update();
     }
-    */
   };
 
-  private _confirmRemoveStage = (index: number): void => {
-    if (confirm(this._trans.__('Are you sure you want to remove this stage? This action cannot be undone.'))) {
-      // this._stages.splice(index, 1);
+  private _confirmRemoveSection = (index: number): void => {
+    if (confirm(this._trans.__('Are you sure you want to remove this section? This action cannot be recovered.'))) {
+      // 1. 获得要删除的 section
+      const sections = this._model.structure?.sections || [];
+      const sectionToRemove = sections[index];
+      
+      if (!sectionToRemove) return;
+
+      if (index == sections.length - 1) {
+        // 删除最后一个 section
+        const source = this._model.sharedModel.getSource();
+        const ranges = this._model.getTextRanges([sectionToRemove.lineNo]);
+        this._model.sharedModel.updateSource(
+          ranges[0].start, 
+          source.length, 
+          ''
+        );
+      } else {
+        // 删除中间的 section
+        const nextSectionLineNo = sections[index + 1].lineNo;
+        const ranges = this._model.getTextRanges([sectionToRemove.lineNo, nextSectionLineNo - 1]);
+        this._model.sharedModel.updateSource(
+          ranges[0].start, 
+          ranges[1].end, 
+          ''
+        );
+      }
+
       this.update();
     }
   };
 
-  private _confirmRemoveCategory = (stageIndex: number, categoryIndex: number): void => {
-    if (confirm(this._trans.__('Are you sure you want to remove this category? This action cannot be undone.'))) {
+  private _confirmRemoveColumn = (sectionIndex: number, columnIndex: number): void => {
+    if (confirm(this._trans.__('Are you sure you want to remove this column? This action cannot be recovered.'))) {
       // this._stages[stageIndex].columns.splice(categoryIndex, 1);
+      const sections = this._model.structure?.sections || [];
+      const section = sections[sectionIndex] || null;
+      if (section) {
+        if (columnIndex == section.columns.length - 1) {
+          // 是最后一个 column
+          if (sectionIndex == sections.length - 1) {
+            // 如果同时是最后一个 section
+            const column = section.columns[columnIndex];
+            const source = this._model.sharedModel.getSource();
+            const ranges = this._model.getTextRanges([column.lineNo]);
+            this._model.sharedModel.updateSource(
+              ranges[0].start, 
+              source.length, 
+              ''
+            );
+          } else {
+            // 如果不是最后一个 section
+            const nextSection = sections[sectionIndex + 1];
+            const column = section.columns[columnIndex];
+
+            const ranges = this._model.getTextRanges([column.lineNo, nextSection.lineNo - 1]);
+            this._model.sharedModel.updateSource(
+              ranges[0].start, 
+              ranges[1].end, 
+              ''
+            );
+          }
+        } else {
+          // 删除中间的 column
+          const nextColumnLineNo = section.columns[columnIndex + 1].lineNo;
+          const ranges = this._model.getTextRanges([section.columns[columnIndex].lineNo, nextColumnLineNo - 1]);
+          this._model.sharedModel.updateSource(
+            ranges[0].start, 
+            ranges[1].end, 
+            ''
+          );
+        }
+      }
       this.update();
     }
   };
@@ -402,15 +576,6 @@ export class KanbanOptionsPanel extends ReactWidget {
 
     this._editing_sections.push(newSection);
 
-    //this._model.addSection(newSection);
-    /*
-    const newStage: IStage = {
-      name: '',
-      columns: []
-    };
-    this._stages.push(newStage);
-    */
-
     this._startEdit('section', 
       this._model.structure?.sections.length || 0, '', undefined, true);
   }
@@ -418,18 +583,13 @@ export class KanbanOptionsPanel extends ReactWidget {
   private _updateFromModel(): void {
     const structure = this._model.structure;
     if (structure) {
-      /*
-      this._stages = structure.sections.map(section => ({
-        name: section.title,
-        columns: section.columns.map(column => ({ name: column.title }))
-      }));
-      */
       this.update();
     }
   }
 
   private _editing_sections: KanbanSection[] = [];
   private _editing_columns: KanbanColumn[] = [];
+  private _editing_columns_in_section: KanbanSection | null = null;
 
   // private _stages: IStage[];
   private _editState: IEditState | null;
