@@ -72,6 +72,9 @@ export interface KanbanStructure {
  * Task interface
  */
 export interface KanbanTask {
+  
+  id: string;
+  
   /**
    * Task title (from first line, starting with ### or ####)
    */
@@ -106,6 +109,7 @@ export interface KanbanTask {
  */
 export function parseTaskText(text: string): KanbanTask {
   const task: KanbanTask = {
+    id: '',
     title: text,
     description: '',
     tags: [],
