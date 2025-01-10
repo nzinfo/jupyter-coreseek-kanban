@@ -1,6 +1,6 @@
 import { Widget } from '@lumino/widgets';
 import { Signal } from '@lumino/signaling';
-import { searchIcon, checkIcon } from '@jupyterlab/ui-components';
+import { addIcon, checkIcon, searchIcon } from '@jupyterlab/ui-components';
 
 interface Tag {
   name: string;
@@ -10,60 +10,62 @@ export class TagSelector extends Widget {
   constructor() {
     super();
     this.addClass('jp-TagSelector');
-    
-    // Create dropdown container
-    this._dropdownContainer = document.createElement('div');
-    this._dropdownContainer.className = 'jp-TagSelector-dropdown';
-    this._dropdownContainer.style.display = 'none';
-    
-    // Create search input wrapper
+
+    // Create current display
+    this._currentDisplay = document.createElement('div');
+    this._currentDisplay.className = 'jp-TagSelector-current';
+    const addIconElement = addIcon.element({
+      tag: 'span',
+      className: 'jp-TagSelector-addIcon'
+    });
+    this._currentDisplay.appendChild(addIconElement);
+    this._currentDisplay.addEventListener('click', this._toggleDropdown);
+    this.node.appendChild(this._currentDisplay);
+
+    // Create dropdown
+    this._dropdown = document.createElement('div');
+    this._dropdown.className = 'jp-TagSelector-dropdown';
+    this._dropdown.style.display = 'none';
+
+    // Create search wrapper
     const searchWrapper = document.createElement('div');
     searchWrapper.className = 'jp-TagSelector-search-wrapper';
-
-    // Add search icon
+    
     const searchIconElement = searchIcon.element({
       tag: 'span',
       className: 'jp-TagSelector-searchIcon'
     });
     searchWrapper.appendChild(searchIconElement);
-    
-    // Create search input
+
     this._searchInput = document.createElement('input');
     this._searchInput.className = 'jp-TagSelector-search';
     this._searchInput.type = 'text';
     this._searchInput.placeholder = 'Search or create tag...';
-    this._searchInput.spellcheck = false;
     this._searchInput.addEventListener('input', this._handleSearch);
     this._searchInput.addEventListener('keydown', this._handleKeyDown);
     searchWrapper.appendChild(this._searchInput);
-    this._dropdownContainer.appendChild(searchWrapper);
     
-    // Create list container
+    this._dropdown.appendChild(searchWrapper);
+
+    // Create tag list
     this._listContainer = document.createElement('div');
     this._listContainer.className = 'jp-TagSelector-list';
-    this._dropdownContainer.appendChild(this._listContainer);
-    
-    // Create current tag display (+ button)
-    this._currentContainer = document.createElement('div');
-    this._currentContainer.className = 'jp-TagSelector-current';
-    const addIconElement = document.createElement('span');
-    addIconElement.className = 'jp-TagSelector-addIcon';
-    addIconElement.textContent = '+';
-    this._currentContainer.appendChild(addIconElement);
-    this._currentContainer.addEventListener('click', this._handleToggleDropdown);
-    
-    // Add to DOM
-    this.node.appendChild(this._currentContainer);
-    this.node.appendChild(this._dropdownContainer);
-    
-    // Close dropdown when clicking outside
-    document.addEventListener('mousedown', this._handleClickOutside);
+    this._dropdown.appendChild(this._listContainer);
+
+    // Add dropdown to body
+    document.body.appendChild(this._dropdown);
+
+    // Add click outside listener
+    document.addEventListener('click', this._handleClickOutside);
   }
 
   dispose(): void {
-    document.removeEventListener('mousedown', this._handleClickOutside);
     if (this.isDisposed) {
       return;
+    }
+    document.removeEventListener('click', this._handleClickOutside);
+    if (this._dropdown && this._dropdown.parentNode) {
+      this._dropdown.parentNode.removeChild(this._dropdown);
     }
     super.dispose();
   }
@@ -79,6 +81,31 @@ export class TagSelector extends Widget {
 
   setSelectedTags(tags: Tag[]): void {
     this._selectedTags = tags;
+    this._renderList();
+  }
+
+  private _toggleDropdown = (event: MouseEvent): void => {
+    event.stopPropagation();
+    if (this._dropdown.style.display === 'none') {
+      this._showDropdown();
+    } else {
+      this._hideDropdown();
+    }
+  };
+
+  private _showDropdown(): void {
+    // Position dropdown relative to current display
+    const rect = this._currentDisplay.getBoundingClientRect();
+    this._dropdown.style.position = 'fixed';
+    this._dropdown.style.top = `${rect.bottom}px`;
+    this._dropdown.style.left = `${rect.left}px`;
+    this._dropdown.style.display = 'block';
+    this._searchInput.focus();
+  }
+
+  private _hideDropdown(): void {
+    this._dropdown.style.display = 'none';
+    this._searchInput.value = '';
     this._renderList();
   }
 
@@ -146,27 +173,6 @@ export class TagSelector extends Widget {
     }
   };
 
-  private _handleToggleDropdown = (): void => {
-    if (this._dropdownContainer.style.display === 'none') {
-      this._showDropdown();
-    } else {
-      this._hideDropdown();
-    }
-  };
-
-  private _showDropdown(): void {
-    this._dropdownContainer.style.display = 'block';
-    this._searchInput.value = '';
-    this._searchTerm = '';
-    this._renderList();
-    this._searchInput.focus();
-  }
-
-  private _hideDropdown(): void {
-    this._dropdownContainer.style.display = 'none';
-    this._searchTerm = '';
-  }
-
   private _handleTagSelect(tag: Tag): void {
     const isSelected = this._selectedTags.some(t => t.name === tag.name);
     if (isSelected) {
@@ -181,7 +187,7 @@ export class TagSelector extends Widget {
   }
 
   private _handleClickOutside = (event: MouseEvent): void => {
-    if (!this.node.contains(event.target as Node)) {
+    if (!this.node.contains(event.target as Node) && !this._dropdown.contains(event.target as Node)) {
       this._hideDropdown();
     }
   };
@@ -189,8 +195,8 @@ export class TagSelector extends Widget {
   private _availableTags: Tag[] = [];
   private _selectedTags: Tag[] = [];
   private _searchTerm = '';
-  private _dropdownContainer: HTMLElement;
-  private _currentContainer: HTMLElement;
+  private _dropdown: HTMLElement;
+  private _currentDisplay: HTMLElement;
   private _searchInput: HTMLInputElement;
   private _listContainer: HTMLElement;
   private _tagToggled = new Signal<this, Tag>(this);
