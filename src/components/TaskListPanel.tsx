@@ -30,6 +30,9 @@ export class TaskListPanel extends SidePanel {
     this.addClass('jp-TaskList-panel');
     this.trans = translator.load('jupyter-coreseek-kanban');
 
+    // 保存模型引用
+    this._model = options.context.model as KanbanModel;
+
     // Create the options panel with toolbar
     const optionsPanel = new PanelWithToolbar();
     optionsPanel.addClass('jp-TaskList-section');
@@ -112,19 +115,56 @@ export class TaskListPanel extends SidePanel {
         this._onTaskMoved(task, TaskCategory.DONE, insertTask);
       }
     });
+
     donePanel.addWidget(this._doneColumn);
     this._donePanel = donePanel;
 
-    // Add panels to the layout
+    // Add panels to the widget
     this.addWidget(backlogPanel);
     this.addWidget(donePanel);
+
+    // 监听模型变化
+    this._model.changed.connect(() => {
+      this._updateTaskLists();
+    });
+
+    // 初始化任务列表
+    this._updateTaskLists();
   }
 
   /**
-   * Set callback for task moved event
+   * Update task lists based on model structure
    */
-  setTaskMovedCallback(callback: (task: KanbanTask, toCategory: TaskCategory, insertAfterTask?: KanbanTask) => void): void {
-    this._onTaskMoved = callback;
+  private _updateTaskLists(): void {
+    if (!this._model.structure) {
+      return;
+    }
+
+    const backlogTasks: KanbanTask[] = [];
+    const doneTasks: KanbanTask[] = [];
+
+    // 根据任务状态分配到不同列表
+    this._model.structure.tasks.forEach(task => {
+      const status = this._model.structure?.task_status.get(task.id);
+      if (status === 'DONE') {
+        doneTasks.push(task);
+      } else {
+        backlogTasks.push(task);
+      }
+    });
+
+    // 更新列的任务
+    this._backlogColumn.setColumn({
+      title: 'Backlog',
+      lineNo: -1,
+      tasks: backlogTasks
+    });
+
+    this._doneColumn.setColumn({
+      title: 'Done',
+      lineNo: -1,
+      tasks: doneTasks
+    });
   }
 
   private _toggleOptionsPanel(): void {
@@ -177,6 +217,13 @@ export class TaskListPanel extends SidePanel {
     }
   }
 
+  /**
+   * Set callback for task moved event
+   */
+  setTaskMovedCallback(callback: (task: KanbanTask, toCategory: TaskCategory, insertAfterTask?: KanbanTask) => void): void {
+    this._onTaskMoved = callback;
+  }
+
   protected trans: TranslationBundle;
   private _backlogColumn: TaskColumn;
   private _doneColumn: TaskColumn;
@@ -188,6 +235,7 @@ export class TaskListPanel extends SidePanel {
   private _backlogPanelExpanded: boolean = true;
   private _donePanelExpanded: boolean = true;
   private _onTaskMoved: ((task: KanbanTask, toCategory: TaskCategory, insertAfterTask?: KanbanTask) => void) | null = null;
+  private _model: KanbanModel;
 }
 
 /**

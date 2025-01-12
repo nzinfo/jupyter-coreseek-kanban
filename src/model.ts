@@ -61,6 +61,15 @@ export namespace Kanban {
      * Move a task to a specific column in the board view
      */
     moveTaskToColumn(task: KanbanTask, toColumn: KanbanColumn, insertAfterTask?: KanbanTask): void;
+
+    /**
+     * Create a new task
+     * @param title Optional title for the new task
+     * @param toColumn Optional column to add the task to
+     * @param insertAfterTask Optional task to insert after
+     * @returns The newly created task
+     */
+    newTask(title?: string, toColumn?: KanbanColumn, insertAfterTask?: KanbanTask): KanbanTask;
   }
 }
 
@@ -89,6 +98,9 @@ export interface KanbanStructure {
   title: string;
   lineNo: number;
   sections: KanbanSection[];
+  task_id_prefix: string;
+  tasks: KanbanTask[];
+  task_status: Map<string, string>;   // value in BACKLOG | DONE
 }
 
 /**
@@ -151,9 +163,46 @@ export interface ITaskChangeArgs {
 }
 
 /**
+ * Generate a simple hash from string
+ */
+function _stringHash(str: string): string {
+  // FIXME: 使用更好的 hash 算法
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(16);
+}
+
+/**
+ * Parse task title with optional ID
+ * @returns [id, title] tuple, where id might be undefined
+ */
+function _parseTaskTitle(text: string): [string | undefined, string] {
+  const match = text.match(/^[\[［](.*?)[\]］](.*)/);
+  if (match) {
+    return [match[1], match[2].trim()];
+  }
+  return [undefined, text];
+}
+
+function _generateTaskId(taskTitle: string, task_id_prefix:string, id?: string): string {
+  if (id) {
+    // return `${this._structure?.task_id_prefix || 'task-'}${id}`;
+    return id;   // title 已经给出 id 了，不需要额外加 prefix
+  }
+
+  // 如果没有指定 ID，使用字符串哈希
+  return `${task_id_prefix}${_stringHash(taskTitle)}`;
+}
+
+/**
  * Parse task text to task object
  */
-export function parseTaskText(text: string): KanbanTask {
+export function parseTaskText(text: string, task_id_prefix: string): KanbanTask {
+  
   const task: KanbanTask = {
     id: '',
     title: text,
@@ -204,6 +253,8 @@ export function parseTaskText(text: string): KanbanTask {
     }
   }
 
+  const [id, title] = _parseTaskTitle(task.title);
+  task.id = _generateTaskId(title, task_id_prefix, id);
   return task;
 }
 
@@ -346,6 +397,45 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
   }
 
   /**
+   * Create a new task
+   * @param title Optional title for the new task
+   * @param toColumn Optional column to add the task to
+   * @param insertAfterTask Optional task to insert after
+   * @returns The newly created task
+   */
+  newTask(title?: string, toColumn?: KanbanColumn, insertAfterTask?: KanbanTask): KanbanTask {
+    const task: KanbanTask = {
+      id: 'uuidv4()',
+      title: title || 'New Task',
+      description: '',
+      tags: [],
+      assignee: []
+    };
+
+    // 如果没有指定目标列，添加到第一个列
+    if (!toColumn && this.structure) {
+      toColumn = this.structure.sections[0]?.columns[0];
+    }
+
+    if (toColumn) {
+      // TODO: Implement the actual text modification logic
+      // 1. Find the insertion point
+      // 2. Insert the task text
+      // 3. Update the model's source
+
+      // Emit the status change signal
+      this._taskStatusChanged.emit({
+        task,
+        fromColumn: undefined,
+        toColumn,
+        insertAfterTask
+      });
+    }
+
+    return task;
+  }
+
+  /**
    * Find the column that contains the given task
    */
   private findTaskColumn(task: KanbanTask): KanbanColumn | undefined {
@@ -393,6 +483,9 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
       title: '',
       lineNo: 0,
       sections: [],
+      task_id_prefix: 'task-',
+      tasks: [],
+      task_status: new Map()
     };
 
     // 第一个一级标题作为看板标题
@@ -400,6 +493,15 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
     if (firstH1) {
       structure.title = firstH1.text;
       structure.lineNo = firstH1.lineStart;
+      // 解析 title，如果形如 [xxx]some title 或 ［xxx］some title, 则 task_id_prefix 为 xxx
+      // 需要支持 全角的 [xxx]
+      const match = firstH1.text.match(/^[\[［](.*?)[\]］](.*)/);
+      if (match) {
+        structure.task_id_prefix = match[1]+'-';
+        structure.title = match[2].trim();
+      } else {
+        structure.task_id_prefix = 'task-';
+      }
     }
 
     // 处理其他一级标题作为分组，其下的二级标题作为列
@@ -431,14 +533,20 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
           tasks: []
         };
         currentSection.columns.push(currentColumn);
-      } else if ((heading.level === 3 || heading.level === 4) && currentSection && currentColumn) {
+      } else if (heading.level === 3 || heading.level === 4) {
         // 计算任务文本的范围
         const taskEndLine = headings[i + 1] ? headings[i + 1].lineStart : lines.length;
         const taskText = lines.slice(heading.lineStart, taskEndLine).join('\n');
         
         // 解析任务
-        const task = parseTaskText(taskText);
-        currentColumn.tasks.push(task);
+        const task = parseTaskText(taskText, structure.task_id_prefix);
+        if(currentSection && currentColumn) {
+          currentColumn.tasks.push(task);
+        } else {
+          // 对于已经有 Section 但是还没有 Column 的情况， 也会被追加到 structure.tasks
+          // 这个行为不完全符合预期，但是不影响使用。日常结构化编辑器不会出现此情况。
+          structure.tasks.push(task);
+        }
       }
     }
 
@@ -447,7 +555,59 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
       structure.sections.push(currentSection);
     }
 
+    // 处理任务列表，位置在 firstH1 ... sections[0]
+    // 构成方式为：
+    // - TaskList, 
+    //  如果 - [ ] 表示是在 Backlog
+    //  如果 - [x] 表示是在 Done
+    // ## Tasks
+    if (firstH1) {
+      // 找到第一个一级标题在数组中的位置
+      const firstH1Index = headings.indexOf(firstH1);
+      if (firstH1Index >= 0) {
+        // 获取下一个标题的起始行，如果没有下一个标题则使用文档末尾
+        const nextHeadingStart = firstH1Index < headings.length - 1 
+          ? headings[firstH1Index + 1].lineStart 
+          : lines.length;
+        
+        const taskListText = lines.slice(firstH1.lineStart + 1, nextHeadingStart).join('\n');
+        // 解析任务列表
+        const taskListLines = taskListText.split('\n');
+        for (const line of taskListLines) {
+          // 匹配任务列表项，　TODO: 是否需要额外处理 ✓ | ✔ 等？ 
+          const match = line.match(/^-\s*\[([ 　xXｘＸ])\]\s*(.+)$/);
+          if (match) {
+            const isBacklog = match[1] === ' ' || match[1] === '　';
+            const taskTitle = match[2].trim();
+            
+            // 创建任务对象
+            const task = this.createTaskObject(taskTitle);
+            
+            // 设置任务状态
+            structure.task_status.set(task.id, isBacklog ? 'BACKLOG' : 'DONE');
+            // 添加到任务列表
+            // structure.tasks.push(task);
+          }  // 如果因为种种原因，match 失败，则状态会默认为 BACKLOG
+        }
+      }
+    }
+
     this._structure = structure;
+  }
+
+  /**
+   * Create task object from title
+   */
+  private createTaskObject(taskTitle: string): KanbanTask {
+    const [id, title] = _parseTaskTitle(taskTitle);
+    
+    return {
+      id: _generateTaskId(taskTitle, this._structure?.task_id_prefix || 'task-', id),
+      title: title,
+      description: '',
+      tags: [],
+      assignee: []
+    };
   }
 
   /**
