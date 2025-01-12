@@ -119,6 +119,8 @@ export class TaskColumn extends Panel {
         const insertIndex = this._getInsertIndex(event.clientY);
         this.insertWidget(insertIndex, source);
 
+        // TODO: 需要获得任务的前后关系
+
         // 通知任务移动
         if (this._onTaskMoved && this._column) {
           this._onTaskMoved(source.task, this._column);

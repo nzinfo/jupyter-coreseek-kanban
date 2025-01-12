@@ -260,6 +260,13 @@ class TaskBoardContent extends Panel {
 
       // Create TaskColumn
       const columnWidget = new TaskColumn(this._trans, column);
+      
+      // Add task moved callback
+      columnWidget.setTaskMovedCallback((task, sourceColumn) => {
+        // TODO: Implement task movement logic
+        console.log('Task moved:', task, 'from', sourceColumn, 'to', column);
+      });
+
       columnContainer.appendChild(columnWidget.node);
 
       // Add column to container
