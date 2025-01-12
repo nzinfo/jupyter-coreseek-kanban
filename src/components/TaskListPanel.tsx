@@ -1,8 +1,6 @@
 import { ITranslator, TranslationBundle } from '@jupyterlab/translation';
 import {
   PanelWithToolbar,
-  // ReactWidget,
-  // refreshIcon,
   SidePanel,
   ToolbarButton,
   addIcon,
@@ -11,7 +9,15 @@ import {
 import { TaskColumn } from './TaskColumn';
 import { KanbanOptionsPanel } from './KanbanOptionsPanel';
 import { DocumentRegistry } from '@jupyterlab/docregistry';
-import { KanbanModel } from '../model';
+import { KanbanModel, KanbanTask } from '../model';
+
+/**
+ * Task category enum for list view
+ */
+export enum TaskCategory {
+  BACKLOG = 'BACKLOG',
+  DONE = 'DONE'
+}
 
 /**
  * The main panel for displaying tasks
@@ -82,6 +88,11 @@ export class TaskListPanel extends SidePanel {
       lineNo: 0,
       tasks: []
     });
+    this._backlogColumn.setTaskMovedCallback((task, targetColumn, insertTask) => {
+      if (this._onTaskMoved) {
+        this._onTaskMoved(task, TaskCategory.BACKLOG, insertTask);
+      }
+    });
 
     backlogPanel.addWidget(this._backlogColumn);
     this._backlogPanel = backlogPanel;
@@ -96,12 +107,24 @@ export class TaskListPanel extends SidePanel {
       lineNo: 0,
       tasks: []
     });
+    this._doneColumn.setTaskMovedCallback((task, targetColumn, insertTask) => {
+      if (this._onTaskMoved) {
+        this._onTaskMoved(task, TaskCategory.DONE, insertTask);
+      }
+    });
     donePanel.addWidget(this._doneColumn);
     this._donePanel = donePanel;
 
     // Add panels to the layout
     this.addWidget(backlogPanel);
     this.addWidget(donePanel);
+  }
+
+  /**
+   * Set callback for task moved event
+   */
+  setTaskMovedCallback(callback: (task: KanbanTask, toCategory: TaskCategory, insertAfterTask?: KanbanTask) => void): void {
+    this._onTaskMoved = callback;
   }
 
   private _toggleOptionsPanel(): void {
@@ -164,6 +187,7 @@ export class TaskListPanel extends SidePanel {
   private _moreOptionsButton: ToolbarButton;
   private _backlogPanelExpanded: boolean = true;
   private _donePanelExpanded: boolean = true;
+  private _onTaskMoved: ((task: KanbanTask, toCategory: TaskCategory, insertAfterTask?: KanbanTask) => void) | null = null;
 }
 
 /**

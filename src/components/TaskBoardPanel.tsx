@@ -20,7 +20,7 @@ import { KanbanLayout } from './KanbanLayout';
 // import { TaskBoardHeaderEditor } from './TaskBoardHeaderEditor';
 import { IEditorServices } from '@jupyterlab/codeeditor';
 import { YFile } from '@jupyter/ydoc';
-import { KanbanModel, KanbanSection } from '../model';
+import { KanbanModel, KanbanSection, KanbanTask, KanbanColumn } from '../model';
 import { DocumentRegistry, ABCWidgetFactory } from '@jupyterlab/docregistry';
 import { CollaborativeEditorWidget } from '../editor';
 
@@ -223,7 +223,15 @@ class TaskBoardContent extends Panel {
       lineNo: 0,
       columns: []
     };
+    this._onTaskMoved = null;
     this._createColumns();
+  }
+
+  /**
+   * Set callback for task moved event
+   */
+  setTaskMovedCallback(callback: (task: KanbanTask, toColumn?: KanbanColumn, insertAfterTask?: KanbanTask) => void): void {
+    this._onTaskMoved = callback;
   }
 
   /**
@@ -262,9 +270,10 @@ class TaskBoardContent extends Panel {
       const columnWidget = new TaskColumn(this._trans, column);
       
       // Add task moved callback
-      columnWidget.setTaskMovedCallback((task, sourceColumn) => {
-        // TODO: Implement task movement logic
-        console.log('Task moved:', task, 'from', sourceColumn, 'to', column);
+      columnWidget.setTaskMovedCallback((task, targetColumn, insertTask) => {
+        if (this._onTaskMoved) {
+          this._onTaskMoved(task, targetColumn, insertTask);
+        }
       });
 
       columnContainer.appendChild(columnWidget.node);
@@ -278,6 +287,7 @@ class TaskBoardContent extends Panel {
 
   private _trans: TranslationBundle;
   private _section: KanbanSection;
+  private _onTaskMoved: ((task: KanbanTask, toColumn?: KanbanColumn, insertAfterTask?: KanbanTask) => void) | null;
 }
 
 /**
@@ -333,6 +343,8 @@ export class TaskBoardPanel extends SidePanel {
       */
       // this._updateFromModel(); 
     });
+
+    this._onTaskMoved = null;
 
     // Add header editor panel with the shared model
     this._headerEditor = null; /* new TaskBoardHeaderEditor({ 
@@ -507,6 +519,13 @@ export class TaskBoardPanel extends SidePanel {
     */
   }
 
+  /**
+   * Set callback for task moved event
+   */
+  setTaskMovedCallback(callback: (task: KanbanTask, toColumn?: KanbanColumn, insertAfterTask?: KanbanTask) => void): void {
+    this._onTaskMoved = callback;
+  }
+
   private _addEditor(editorWidget: Widget): void {
     if (this._headerEditor) {
       // Add the editor to the header editor panel
@@ -564,13 +583,15 @@ export class TaskBoardPanel extends SidePanel {
       );
 
       // Add task board content with section from model
-      const content = new TaskBoardContent({
-        trans: this.trans,
-        section: section
-      });
+        const content = new TaskBoardContent({
+          trans: this.trans,
+          section: section
+        });
       contentPanel.addWidget(content);
       this.addWidget(contentPanel);
-      
+      if (this._onTaskMoved) {
+        content.setTaskMovedCallback(this._onTaskMoved);
+      }
       // Store panel reference
       this._sectionPanels.push(contentPanel);
     });
@@ -617,6 +638,8 @@ export class TaskBoardPanel extends SidePanel {
   private _sectionPanels: PanelWithToolbar[] = [];
   private _sectionPanelsState: Map<string, boolean> = new Map(); // 记录面板展开状态
   private _isDescriptionEditorOpen: boolean = false;
+
+  private _onTaskMoved: ((task: KanbanTask, toColumn?: KanbanColumn, insertAfterTask?: KanbanTask) => void) | null;
 }
 
 /**

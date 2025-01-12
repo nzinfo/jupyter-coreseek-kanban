@@ -47,7 +47,7 @@ export class TaskColumn extends Panel {
   /**
    * Set callback for task moved event
    */
-  setTaskMovedCallback(callback: (task: KanbanTask, column: KanbanColumn) => void) {
+  setTaskMovedCallback(callback: (task: KanbanTask, column: KanbanColumn, insertTask?: KanbanTask) => void) {
     this._onTaskMoved = callback;
   }
 
@@ -111,19 +111,23 @@ export class TaskColumn extends Panel {
       
       // 确保源卡片仍然有效
       if (!source.isDisposed) {
-        if (source.parent) {
+        // 可选, 不需要主动从 parent 中移除，因为接下来会修改文本文件，自动更新到 board 视图
+        /* if (source.parent) {
           source.parent.layout?.removeWidget(source);
-        }
+        } */
         
-        // 在指示器位置插入卡片
+        // 获取插入位置的任务
         const insertIndex = this._getInsertIndex(event.clientY);
-        this.insertWidget(insertIndex, source);
+        const widgets = this.widgets;
+        const insertTask = insertIndex < widgets.length ? 
+          (widgets[insertIndex] as TaskCard).task : undefined;
 
-        // TODO: 需要获得任务的前后关系
+        // 插入卡片
+        // this.insertWidget(insertIndex, source);
 
         // 通知任务移动
         if (this._onTaskMoved && this._column) {
-          this._onTaskMoved(source.task, this._column);
+          this._onTaskMoved(source.task, this._column, insertTask);
         }
       }
       
@@ -189,5 +193,5 @@ export class TaskColumn extends Panel {
 
   private _dropIndicator: HTMLDivElement;
   private _column: KanbanColumn | null = null;
-  private _onTaskMoved: ((task: KanbanTask, column: KanbanColumn) => void) | null = null;
+  private _onTaskMoved: ((task: KanbanTask, column: KanbanColumn, insertTask?: KanbanTask) => void) | null = null;
 }
