@@ -404,6 +404,12 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
    * @returns The newly created task
    */
   newTask(title?: string, toColumn?: KanbanColumn, insertAfterTask?: KanbanTask): KanbanTask {
+    const source = this._sharedModel.getSource();
+    this.structure?.lineNo;
+    // TODO: 从 this.structure?.lineNo 开始，定位 '\n#' 的位置作为结束，其区域为 TaskList
+    // 遍历所有行，找到最后一个非空行
+    // 添加 TaskList Item 和 Task 的标题行
+    
     const task: KanbanTask = {
       id: 'uuidv4()',
       title: title || 'New Task',
@@ -433,6 +439,34 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
     }
 
     return task;
+  }
+
+  /**
+   * Get next available task ID
+   */
+  nextTaskId(): string {
+    if (!this._structure) {
+      return 'task-1';
+    }
+
+    const prefix = this._structure.task_id_prefix;
+    let maxNum = 0;
+
+    // 遍历所有任务 ID
+    this._structure.task_status.forEach((_, id) => {
+      // 只处理以指定前缀开头的 ID
+      if (id.startsWith(prefix)) {
+        const numStr = id.substring(prefix.length);
+        // 尝试将后缀转换为数字
+        const num = parseInt(numStr, 10);
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num;
+        }
+      }
+    });
+
+    // 返回下一个可用的 ID
+    return `${prefix}${maxNum + 1}`;
   }
 
   /**
@@ -574,16 +608,17 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
         // 解析任务列表
         const taskListLines = taskListText.split('\n');
         for (const line of taskListLines) {
-          // 匹配任务列表项，　TODO: 是否需要额外处理 ✓ | ✔ 等？ 
-          const match = line.match(/^-\s*\[([ 　xXｘＸ])\]\s*(.+)$/);
+          // 匹配任务列表项，支持以下格式
+          // - [ ]xxx  - [x]xxx  - []xxx  - [X]xxx  - [　]xxx  - [ｘ]xxx  - [Ｘ]xxx
+          const match = line.match(/^-\s*\[([　 ]|[xXｘＸ]|)\]\s*(.+)$/);
           if (match) {
-            const isBacklog = match[1] === ' ' || match[1] === '　';
+            const isBacklog = !match[1] || match[1] === ' ' || match[1] === '　';
             const taskTitle = match[2].trim();
             
             // 创建任务对象
             const task = this.createTaskObject(taskTitle);
             
-            // 设置任务状态
+            // 设置任务状态，任务状态是所有 Task 的状态，因此 entry 数量会超过该 structure.tasks 的长度
             structure.task_status.set(task.id, isBacklog ? 'BACKLOG' : 'DONE');
             // 添加到任务列表
             // structure.tasks.push(task);
