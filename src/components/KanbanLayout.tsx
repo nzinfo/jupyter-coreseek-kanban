@@ -7,7 +7,7 @@ import { IEditorServices } from '@jupyterlab/codeeditor';
 import { TaskListPanel, TaskCategory } from './TaskListPanel';
 import { TaskBoardPanel } from './TaskBoardPanel';
 import { DocumentRegistry } from '@jupyterlab/docregistry';
-import { KanbanTask, KanbanColumn } from '../model';
+import { KanbanModel, KanbanTask, KanbanColumn } from '../model';
 
 /**
  * The main layout for the Kanban board.
@@ -21,7 +21,8 @@ export class KanbanLayout extends SplitPanel {
     });
 
     this._translator = options.translator || nullTranslator;
-    
+    this._model = options.context.model as KanbanModel;
+
     // Create left panel widget
     this._tasklistWidget = new TaskListPanel({ 
       context: options.context,
@@ -106,7 +107,8 @@ export class KanbanLayout extends SplitPanel {
     // 在列表视图中移动任务
     if (this._tasklistWidget) {
       // TODO: 实现列表视图的任务移动逻辑
-      console.log('Task moved in list view:', task, toCategory, insertAfterTask);
+      // console.log('Task moved in list view:', task, toCategory, insertAfterTask);
+      this._model.moveTaskToList(task, toCategory, insertAfterTask);
     }
   }
 
@@ -115,15 +117,17 @@ export class KanbanLayout extends SplitPanel {
    */
   handleTaskMovedInBoard(task: KanbanTask, toColumn?: KanbanColumn, insertAfterTask?: KanbanTask): void {
     // 在看板视图中移动任务
-    if (this._boardWidget) {
+    if (this._boardWidget && toColumn) {
       // TODO: 实现看板视图的任务移动逻辑
-      console.log('Task moved in board view:', task, toColumn, insertAfterTask);
+      // console.log('Task moved in board view:', task, toColumn, insertAfterTask);
+      this._model.moveTaskToColumn(task, toColumn, insertAfterTask);
     }
   }
 
   protected readonly _translator: ITranslator;
   private _tasklistWidget: TaskListPanel;
   private _boardWidget: TaskBoardPanel;
+  private _model: KanbanModel;
 }
 
 /**

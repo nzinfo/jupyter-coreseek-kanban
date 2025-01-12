@@ -41,6 +41,26 @@ export namespace Kanban {
      * Check if the model is disposed
      */
     readonly isDisposed: boolean;
+
+    /**
+     * Signal emitted when a task's status changes through API calls
+     */
+    readonly taskStatusChanged: Signal<this, ITaskStatusChangeArgs>;
+
+    /**
+     * Signal emitted when a task's content changes
+     */
+    readonly taskChanged: Signal<this, ITaskChangeArgs>;
+
+    /**
+     * Move a task to a specific category in the list view
+     */
+    moveTaskToList(task: KanbanTask, toCategory: string, insertAfterTask?: KanbanTask): void;
+
+    /**
+     * Move a task to a specific column in the board view
+     */
+    moveTaskToColumn(task: KanbanTask, toColumn: KanbanColumn, insertAfterTask?: KanbanTask): void;
   }
 }
 
@@ -105,6 +125,29 @@ export interface KanbanTask {
     name: string;
     profile?: string;
   }[];
+}
+
+/**
+ * Task status change event type
+ */
+export interface ITaskStatusChangeArgs {
+  task: KanbanTask;
+  fromColumn?: KanbanColumn;
+  toColumn?: KanbanColumn;
+  insertAfterTask?: KanbanTask;
+}
+
+/**
+ * Task change event type
+ */
+export interface ITaskChangeArgs {
+  task: KanbanTask;
+  changes: {
+    title?: string;
+    description?: string;
+    status?: string;
+    [key: string]: any;
+  };
 }
 
 /**
@@ -173,6 +216,8 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
   private _changed = new Signal<this, IChangedArgs<string>>(this);
   private _readOnlyChanged = new Signal<this, IChangedArgs<boolean>>(this);
   private _structure: KanbanStructure | null = null;
+  private _taskStatusChanged = new Signal<this, ITaskStatusChangeArgs>(this);
+  private _taskChanged = new Signal<this, ITaskChangeArgs>(this);
   readonly model_name = 'kanban';
 
   constructor(options: Kanban.IModelOptions) {
@@ -203,6 +248,14 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
 
   get structure(): KanbanStructure | null {
     return this._structure;
+  }
+
+  get taskStatusChanged(): Signal<this, ITaskStatusChangeArgs> {
+    return this._taskStatusChanged;
+  }
+
+  get taskChanged(): Signal<this, ITaskChangeArgs> {
+    return this._taskChanged;
   }
 
   override dispose(): void {
@@ -242,6 +295,72 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
       // Return start and end positions
       return { start, end};
     });
+  }
+
+  /**
+   * Move a task to a specific category in the list view
+   */
+  moveTaskToList(task: KanbanTask, toCategory: string, insertAfterTask?: KanbanTask): void {
+    const fromColumn = this.findTaskColumn(task);
+    if (!fromColumn) {
+      console.warn('Task not found in any column:', task);
+      return;
+    }
+
+    // TODO: Implement the actual text modification logic
+    // 1. Remove task from its current location
+    // 2. Insert task at the new location
+    // 3. Update the model's source
+
+    // Emit the status change signal
+    this._taskStatusChanged.emit({
+      task,
+      fromColumn,
+      toColumn: undefined,
+      insertAfterTask
+    });
+  }
+
+  /**
+   * Move a task to a specific column in the board view
+   */
+  moveTaskToColumn(task: KanbanTask, toColumn: KanbanColumn, insertAfterTask?: KanbanTask): void {
+    const fromColumn = this.findTaskColumn(task);
+    if (!fromColumn) {
+      console.warn('Task not found in any column:', task);
+      return;
+    }
+
+    // TODO: Implement the actual text modification logic
+    // 1. Remove task from its current location
+    // 2. Insert task at the new location
+    // 3. Update the model's source
+
+    // Emit the status change signal
+    this._taskStatusChanged.emit({
+      task,
+      fromColumn,
+      toColumn,
+      insertAfterTask
+    });
+  }
+
+  /**
+   * Find the column that contains the given task
+   */
+  private findTaskColumn(task: KanbanTask): KanbanColumn | undefined {
+    if (!this.structure) {
+      return undefined;
+    }
+
+    for (const section of this.structure.sections) {
+      for (const column of section.columns) {
+        if (column.tasks.some(t => t.id === task.id)) {
+          return column;
+        }
+      }
+    }
+    return undefined;
   }
 
   /**
