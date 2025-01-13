@@ -119,5 +119,6 @@
 }
 
 .jp-TaskCard-avatar-empty {
-  opacity: 0.5;
+  opacity: 0.7;
+  background: var(--jp-layout-color4);
 }

@@ -77,6 +77,8 @@ export class TaskCard extends Widget {
     ]);
     if (this._task.assignee && this._task.assignee.length > 0) {
       this._assigneeSelector.setCurrentAssignee(this._task.assignee[0]);
+    } else {
+      this._assigneeSelector.setCurrentAssignee();
     }
     this._assigneeSelector.assigneeChanged.connect(this._handleAssigneeChange);
     header.appendChild(this._assigneeSelector.node);
