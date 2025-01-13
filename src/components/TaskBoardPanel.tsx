@@ -230,7 +230,7 @@ class TaskBoardContent extends Panel {
   /**
    * Set callback for task moved event
    */
-  setTaskMovedCallback(callback: (task: KanbanTask, toColumn?: KanbanColumn, insertAfterTask?: KanbanTask) => void): void {
+  setTaskMovedCallback(callback: (task: KanbanTask, toColumn?: KanbanColumn, insertBeforeTask?: KanbanTask) => void): void {
     this._onTaskMoved = callback;
   }
 
@@ -287,7 +287,7 @@ class TaskBoardContent extends Panel {
 
   private _trans: TranslationBundle;
   private _section: KanbanSection;
-  private _onTaskMoved: ((task: KanbanTask, toColumn?: KanbanColumn, insertAfterTask?: KanbanTask) => void) | null;
+  private _onTaskMoved: ((task: KanbanTask, toColumn?: KanbanColumn, insertBeforeTask?: KanbanTask) => void) | null;
 }
 
 /**
@@ -522,7 +522,7 @@ export class TaskBoardPanel extends SidePanel {
   /**
    * Set callback for task moved event
    */
-  setTaskMovedCallback(callback: (task: KanbanTask, toColumn?: KanbanColumn, insertAfterTask?: KanbanTask) => void): void {
+  setTaskMovedCallback(callback: (task: KanbanTask, toColumn?: KanbanColumn, insertBeforeTask?: KanbanTask) => void): void {
     this._onTaskMoved = callback;
   }
 
@@ -639,7 +639,7 @@ export class TaskBoardPanel extends SidePanel {
   private _sectionPanelsState: Map<string, boolean> = new Map(); // 记录面板展开状态
   private _isDescriptionEditorOpen: boolean = false;
 
-  private _onTaskMoved: ((task: KanbanTask, toColumn?: KanbanColumn, insertAfterTask?: KanbanTask) => void) | null;
+  private _onTaskMoved: ((task: KanbanTask, toColumn?: KanbanColumn, insertBeforeTask?: KanbanTask) => void) | null;
 }
 
 /**

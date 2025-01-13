@@ -31,8 +31,8 @@ export class KanbanLayout extends SplitPanel {
     this._tasklistWidget.addClass('jp-KanbanLayout-right');
     
     // Register task moved callback for list view
-    this._tasklistWidget.setTaskMovedCallback((task, toCategory, insertAfterTask) => {
-      this.handleTaskMovedInList(task, toCategory, insertAfterTask);
+    this._tasklistWidget.setTaskMovedCallback((task, toCategory, insertBeforeTask) => {
+      this.handleTaskMovedInList(task, toCategory, insertBeforeTask);
     });
     
     // Create right panel widget
@@ -45,8 +45,8 @@ export class KanbanLayout extends SplitPanel {
     this._boardWidget.addClass('jp-KanbanLayout-left');
     
     // Register task moved callback for board view
-    this._boardWidget.setTaskMovedCallback((task, toColumn, insertAfterTask) => {
-      this.handleTaskMovedInBoard(task, toColumn, insertAfterTask);
+    this._boardWidget.setTaskMovedCallback((task, toColumn, insertBeforeTask) => {
+      this.handleTaskMovedInBoard(task, toColumn, insertBeforeTask);
     });
     
     // Add widgets to the split panel
@@ -103,24 +103,22 @@ export class KanbanLayout extends SplitPanel {
   /**
    * Handle task moved in list view
    */
-  handleTaskMovedInList(task: KanbanTask, toCategory: TaskCategory, insertAfterTask?: KanbanTask): void {
+  handleTaskMovedInList(task: KanbanTask, toCategory: TaskCategory, insertBeforeTask?: KanbanTask): void {
     // 在列表视图中移动任务
     if (this._tasklistWidget) {
       // TODO: 实现列表视图的任务移动逻辑
-      // console.log('Task moved in list view:', task, toCategory, insertAfterTask);
-      this._model.moveTaskToList(task, toCategory, insertAfterTask);
+      this._model.moveTaskToList(task, toCategory, insertBeforeTask);
     }
   }
 
   /**
    * Handle task moved in board view
    */
-  handleTaskMovedInBoard(task: KanbanTask, toColumn?: KanbanColumn, insertAfterTask?: KanbanTask): void {
+  handleTaskMovedInBoard(task: KanbanTask, toColumn?: KanbanColumn, insertBeforeTask?: KanbanTask): void {
     // 在看板视图中移动任务
     if (this._boardWidget && toColumn) {
       // TODO: 实现看板视图的任务移动逻辑
-      // console.log('Task moved in board view:', task, toColumn, insertAfterTask);
-      this._model.moveTaskToColumn(task, toColumn, insertAfterTask);
+      this._model.moveTaskToColumn(task, toColumn, insertBeforeTask);
     }
   }
 

@@ -79,7 +79,9 @@ export class TaskListPanel extends SidePanel {
       new ToolbarButton({
         icon: addIcon,
         onClick: () => {
-          console.log('Add new task clicked');
+          // console.log('Add new task clicked');
+          const newTaskId = this._model.newTask();
+          console.log('Added new task with ID:', newTaskId);
         },
         tooltip: this.trans.__('Add new task')
       })
@@ -220,7 +222,7 @@ export class TaskListPanel extends SidePanel {
   /**
    * Set callback for task moved event
    */
-  setTaskMovedCallback(callback: (task: KanbanTask, toCategory: TaskCategory, insertAfterTask?: KanbanTask) => void): void {
+  setTaskMovedCallback(callback: (task: KanbanTask, toCategory: TaskCategory, insertBeforeTask?: KanbanTask) => void): void {
     this._onTaskMoved = callback;
   }
 
@@ -234,7 +236,7 @@ export class TaskListPanel extends SidePanel {
   private _moreOptionsButton: ToolbarButton;
   private _backlogPanelExpanded: boolean = true;
   private _donePanelExpanded: boolean = true;
-  private _onTaskMoved: ((task: KanbanTask, toCategory: TaskCategory, insertAfterTask?: KanbanTask) => void) | null = null;
+  private _onTaskMoved: ((task: KanbanTask, toCategory: TaskCategory, insertBeforeTask?: KanbanTask) => void) | null = null;
   private _model: KanbanModel;
 }
 

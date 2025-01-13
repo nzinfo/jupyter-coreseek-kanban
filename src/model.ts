@@ -55,21 +55,21 @@ export namespace Kanban {
     /**
      * Move a task to a specific category in the list view
      */
-    moveTaskToList(task: KanbanTask, toCategory: string, insertAfterTask?: KanbanTask): void;
+    moveTaskToList(task: KanbanTask, toCategory: string, insertBeforeTask?: KanbanTask): void;
 
     /**
      * Move a task to a specific column in the board view
      */
-    moveTaskToColumn(task: KanbanTask, toColumn: KanbanColumn, insertAfterTask?: KanbanTask): void;
+    moveTaskToColumn(task: KanbanTask, toColumn: KanbanColumn, insertBeforeTask?: KanbanTask): void;
 
     /**
      * Create a new task
      * @param title Optional title for the new task
      * @param toColumn Optional column to add the task to
-     * @param insertAfterTask Optional task to insert after
+     * @param insertBeforeTask Optional task to insert before
      * @returns The newly created task
      */
-    newTask(title?: string, toColumn?: KanbanColumn, insertAfterTask?: KanbanTask): KanbanTask;
+    newTask(title?: string, toColumn?: KanbanColumn, insertBeforeTask?: KanbanTask): string;
   }
 }
 
@@ -107,7 +107,7 @@ export interface KanbanStructure {
  * Task interface
  */
 export interface KanbanTask {
-  
+  lineNo: number;
   id: string;
   
   /**
@@ -146,7 +146,7 @@ export interface ITaskStatusChangeArgs {
   task: KanbanTask;
   fromColumn?: KanbanColumn;
   toColumn?: KanbanColumn;
-  insertAfterTask?: KanbanTask;
+  insertBeforeTask?: KanbanTask;
 }
 
 /**
@@ -201,9 +201,10 @@ function _generateTaskId(taskTitle: string, task_id_prefix:string, id?: string):
 /**
  * Parse task text to task object
  */
-export function parseTaskText(text: string, task_id_prefix: string): KanbanTask {
+export function parseTaskText(lineNo: number, text: string, task_id_prefix: string): KanbanTask {
   
   const task: KanbanTask = {
+    lineNo: lineNo,
     id: '',
     title: text,
     description: '',
@@ -289,6 +290,7 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
     return this._docManager;
   }
 
+  
   get changed(): Signal<this, IChangedArgs<string>> {
     return this._changed;
   }
@@ -334,8 +336,11 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
     
     return line_numbers.map(lineNo => {
       // Ensure line number is valid
-      if (lineNo < 0 || lineNo >= matches.length) {
+      if (lineNo < 0) {
         throw new Error(`Invalid line number: ${lineNo}`);
+      }
+      if (lineNo >= matches.length) {
+        return { start: content.length, end: content.length };
       }
       
       // Find the match for the specific line number
@@ -351,31 +356,60 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
   /**
    * Move a task to a specific category in the list view
    */
-  moveTaskToList(task: KanbanTask, toCategory: string, insertAfterTask?: KanbanTask): void {
+  moveTaskToList(task: KanbanTask, toCategory: string, insertBeforeTask?: KanbanTask): void {
     const fromColumn = this.findTaskColumn(task);
     if (!fromColumn) {
       console.warn('Task not found in any column:', task);
-      return;
+      // return;
     }
 
-    // TODO: Implement the actual text modification logic
-    // 1. Remove task from its current location
-    // 2. Insert task at the new location
-    // 3. Update the model's source
+    const source = this._sharedModel.getSource(); 
+    
+    // TODO: 更新任务状态，如果需要
+
+    // 如果存在 insertBeforeTask，则在该任务之前插入
+    if (insertBeforeTask) {
+      const ranges = this.getTextRanges([task.lineNo, insertBeforeTask.lineNo]);
+      // 从 ranges[0].start 查找 '\n#' , 推定 task 的结尾，如果没有，则一直到文件结束
+      let taskEnd = source.indexOf('\n#', ranges[0].start);
+      if (taskEnd === -1) {
+        taskEnd = source.length;
+      }
+      
+      let taskText = source.substring(ranges[0].start, taskEnd);
+      if (!taskText.endsWith('\n')) {
+        taskText = taskText+'\n'; // 强制要求换行为结束
+      } else {
+        // 如果连续换行，仅保留一个
+        taskText = taskText.replace(/\n+/g, '\n');
+      }
+
+      // 需要判断 task 与 insertBeforeTask 在文档中的实际前后关系
+      // 避免重复计算 offset
+      if (task.lineNo < insertBeforeTask.lineNo) {  
+        // 先添加，再删除, 暂时不考虑 
+        this._sharedModel.updateSource(ranges[1].start, ranges[1].start, taskText);
+        this._sharedModel.updateSource(ranges[0].start, taskEnd,'');
+      } else {
+        // 先删除，再添加
+        this._sharedModel.updateSource(ranges[0].start, taskEnd,'');
+        this._sharedModel.updateSource(ranges[1].start, ranges[1].start, taskText);
+      }
+    }
 
     // Emit the status change signal
     this._taskStatusChanged.emit({
       task,
       fromColumn,
       toColumn: undefined,
-      insertAfterTask
+      insertBeforeTask
     });
   }
 
   /**
    * Move a task to a specific column in the board view
    */
-  moveTaskToColumn(task: KanbanTask, toColumn: KanbanColumn, insertAfterTask?: KanbanTask): void {
+  moveTaskToColumn(task: KanbanTask, toColumn: KanbanColumn, insertBeforeTask?: KanbanTask): void {
     const fromColumn = this.findTaskColumn(task);
     if (!fromColumn) {
       console.warn('Task not found in any column:', task);
@@ -392,53 +426,55 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
       task,
       fromColumn,
       toColumn,
-      insertAfterTask
+      insertBeforeTask
     });
   }
 
   /**
    * Create a new task
-   * @param title Optional title for the new task
-   * @param toColumn Optional column to add the task to
-   * @param insertAfterTask Optional task to insert after
+   * @param title Optional task title
+   * @param toColumn Optional target column
+   * @param insertBeforeTask Optional task to insert before
    * @returns The newly created task
    */
-  newTask(title?: string, toColumn?: KanbanColumn, insertAfterTask?: KanbanTask): KanbanTask {
+  newTask(title?: string, toColumn?: KanbanColumn, insertBeforeTask?: KanbanTask): string {
+    if (!this._structure) {
+      throw new Error('Structure not initialized');
+    }
+
     const source = this._sharedModel.getSource();
-    this.structure?.lineNo;
-    // TODO: 从 this.structure?.lineNo 开始，定位 '\n#' 的位置作为结束，其区域为 TaskList
-    // 遍历所有行，找到最后一个非空行
-    // 添加 TaskList Item 和 Task 的标题行
+    const lines = source.split('\n');
+    const startLineNo = this._structure.lineNo;
+    const taskTitle = title || 'New Task';
+
+    // 找到 TaskList 区域的结束位置（下一个以 # 开头的行）
+    // let endLineNo = lines.length;
+    let lastNonEmptyLine = startLineNo;
+    for (let i = startLineNo + 1; i < lines.length; i++) {
+      if (lines[i].startsWith('#')) {
+        // endLineNo = i;
+        break;
+      }
+      if (lines[i].trim() !== '') {
+        lastNonEmptyLine = i;
+      }
+    }
     
-    const task: KanbanTask = {
-      id: 'uuidv4()',
-      title: title || 'New Task',
-      description: '',
-      tags: [],
-      assignee: []
-    };
+    const ranges = this.getTextRanges([lastNonEmptyLine + 1]);
 
-    // 如果没有指定目标列，添加到第一个列
-    if (!toColumn && this.structure) {
-      toColumn = this.structure.sections[0]?.columns[0];
-    }
+    // 创建新任务
+    const newTaskId = this.nextTaskId();
 
-    if (toColumn) {
-      // TODO: Implement the actual text modification logic
-      // 1. Find the insertion point
-      // 2. Insert the task text
-      // 3. Update the model's source
+    // 在最后一个非空行后添加新任务
+    const taskLine = `-[ ] [${newTaskId}]${taskTitle}`;
+    const taskBlock = `\n### [${newTaskId}]${taskTitle}\n\n`;
 
-      // Emit the status change signal
-      this._taskStatusChanged.emit({
-        task,
-        fromColumn: undefined,
-        toColumn,
-        insertAfterTask
-      });
-    }
+    // 更新文本
+    this._sharedModel.updateSource(ranges[0].start, ranges[0].start,
+      taskLine + '\n' + taskBlock
+    );
 
-    return task;
+    return newTaskId;
   }
 
   /**
@@ -573,7 +609,7 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
         const taskText = lines.slice(heading.lineStart, taskEndLine).join('\n');
         
         // 解析任务
-        const task = parseTaskText(taskText, structure.task_id_prefix);
+        const task = parseTaskText(heading.lineStart, taskText, structure.task_id_prefix);
         if(currentSection && currentColumn) {
           currentColumn.tasks.push(task);
         } else {
@@ -615,8 +651,8 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
             const isBacklog = !match[1] || match[1] === ' ' || match[1] === '　';
             const taskTitle = match[2].trim();
             
-            // 创建任务对象
-            const task = this.createTaskObject(taskTitle);
+            // 创建任务对象, 这里并不实际需要 task 对象，仅仅需要 task.id
+            const task = this.createTaskObject(taskTitle, -1);
             
             // 设置任务状态，任务状态是所有 Task 的状态，因此 entry 数量会超过该 structure.tasks 的长度
             structure.task_status.set(task.id, isBacklog ? 'BACKLOG' : 'DONE');
@@ -633,10 +669,11 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
   /**
    * Create task object from title
    */
-  private createTaskObject(taskTitle: string): KanbanTask {
+  private createTaskObject(taskTitle: string, lineNo: number): KanbanTask {
     const [id, title] = _parseTaskTitle(taskTitle);
     
     return {
+      lineNo: lineNo,
       id: _generateTaskId(taskTitle, this._structure?.task_id_prefix || 'task-', id),
       title: title,
       description: '',

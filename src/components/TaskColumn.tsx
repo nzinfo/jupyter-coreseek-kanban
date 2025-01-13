@@ -34,6 +34,7 @@ export class TaskColumn extends Panel {
    */
   setColumn(column: KanbanColumn) {
     this._column = column;
+    console.log('set column:', column);
     this._createContent();
   }
 
@@ -137,7 +138,11 @@ export class TaskColumn extends Panel {
 
   private _createContent(): void {
     // Clear existing content
-    this.widgets.forEach(widget => widget.dispose());
+    while (this.widgets.length > 0) {
+      const widget = this.widgets[0];
+      widget.parent = null;
+      widget.dispose();
+    }
 
     // Create tasks
     if (this._column) {
@@ -145,6 +150,9 @@ export class TaskColumn extends Panel {
         const card = new TaskCard({ task });
         this.addWidget(card);
       });
+      
+      // Force a layout update
+      this.update();
     }
   }
 
