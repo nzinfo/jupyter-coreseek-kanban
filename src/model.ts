@@ -337,8 +337,11 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
     return line_numbers.map(lineNo => {
       // Ensure line number is valid
       if (lineNo < 0) {
-        throw new Error(`Invalid line number: ${lineNo}`);
+        // throw new Error(`Invalid line number: ${lineNo}`);
+        // 这样 -1 表示为最后一行
+        lineNo = matches.length + lineNo; 
       }
+
       if (lineNo >= matches.length) {
         return { start: content.length, end: content.length };
       }
@@ -365,11 +368,31 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
 
     const source = this._sharedModel.getSource(); 
     
-    // TODO: 更新任务状态，如果需要
+    // 更新任务状态
+    const taskItemPos = source.indexOf(`${task.title}`);
+    if (taskItemPos != -1) {
+      // 回溯，定位 \n
+      const lineStart = source.lastIndexOf('\n', taskItemPos);
+      // 需要确认距离 从 lineStart -> taskItemPos
+      console.log('prefix', source.substring(lineStart, taskItemPos));
+      const newStatus = toCategory === 'DONE' ? '\n-[X] ' : '\n-[ ] ';
+      this._sharedModel.updateSource(lineStart, taskItemPos, newStatus);
+    } else {
+      console.warn('Task not found in tasklist:', task);
+    }
 
     // 如果存在 insertBeforeTask，则在该任务之前插入
+    let insertBeforeLineNo = -1;
     if (insertBeforeTask) {
-      const ranges = this.getTextRanges([task.lineNo, insertBeforeTask.lineNo]);
+      insertBeforeLineNo = insertBeforeTask.lineNo;
+    } else if(this._structure?.sections){
+      // 没有 insertBeforeTask 的情况
+      insertBeforeLineNo = this._structure?.sections[0].lineNo;
+    } 
+
+    // if (insertBeforeLineNo != -1) // 现在 getTextRanges 接受 -1 了
+    {
+      const ranges = this.getTextRanges([task.lineNo, insertBeforeLineNo]);
       // 从 ranges[0].start 查找 '\n#' , 推定 task 的结尾，如果没有，则一直到文件结束
       let taskEnd = source.indexOf('\n#', ranges[0].start);
       if (taskEnd === -1) {
@@ -386,16 +409,20 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
 
       // 需要判断 task 与 insertBeforeTask 在文档中的实际前后关系
       // 避免重复计算 offset
-      if (task.lineNo < insertBeforeTask.lineNo) {  
+      if (task.lineNo < insertBeforeLineNo) {  
         // 先添加，再删除, 暂时不考虑 
-        this._sharedModel.updateSource(ranges[1].start, ranges[1].start, taskText);
+        this._sharedModel.updateSource(ranges[1].start, ranges[1].start,
+          '\n' + taskText
+        );
+
+        // 更新 task list, 此处默认依赖 task list 一定在某个具体 column 之前
         this._sharedModel.updateSource(ranges[0].start, taskEnd,'');
       } else {
         // 先删除，再添加
         this._sharedModel.updateSource(ranges[0].start, taskEnd,'');
         this._sharedModel.updateSource(ranges[1].start, ranges[1].start, taskText);
       }
-    }
+    } // end if (insertBeforeLineNo != -1)
 
     // Emit the status change signal
     this._taskStatusChanged.emit({
@@ -433,7 +460,7 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
   /**
    * Create a new task
    * @param title Optional task title
-   * @param toColumn Optional target column
+   * @param toColumn Optional column to add the task to
    * @param insertBeforeTask Optional task to insert before
    * @returns The newly created task
    */
@@ -467,12 +494,24 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
 
     // 在最后一个非空行后添加新任务
     const taskLine = `-[ ] [${newTaskId}]${taskTitle}`;
-    const taskBlock = `\n### [${newTaskId}]${taskTitle}\n\n`;
+    const taskBlock = `\n### [${newTaskId}]${taskTitle}\n`;
 
-    // 更新文本
-    this._sharedModel.updateSource(ranges[0].start, ranges[0].start,
-      taskLine + '\n' + taskBlock
-    );
+    if (toColumn) {
+      // 当指定 toColumn 时，插入到指定位置
+      const columnRanges = this.getTextRanges([toColumn.lineNo]);
+      this._sharedModel.updateSource(columnRanges[0].end, columnRanges[0].end,
+        '\n' + taskBlock
+      );
+
+      // 更新 task list, 此处默认依赖 task list 一定在某个具体 column 之前
+      this._sharedModel.updateSource(ranges[0].start, ranges[0].start,
+        taskLine + '\n'
+      );
+    } else {  // 更新文本
+      this._sharedModel.updateSource(ranges[0].start, ranges[0].start,
+        taskLine + '\n' + taskBlock
+      );
+    }
 
     return newTaskId;
   }
@@ -568,7 +607,6 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
       const match = firstH1.text.match(/^[\[［](.*?)[\]］](.*)/);
       if (match) {
         structure.task_id_prefix = match[1]+'-';
-        structure.title = match[2].trim();
       } else {
         structure.task_id_prefix = 'task-';
       }

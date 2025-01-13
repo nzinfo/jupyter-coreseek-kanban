@@ -577,6 +577,12 @@ export class TaskBoardPanel extends SidePanel {
             // const currentContent = this._sharedModel.getSource();
             // this._sharedModel.setSource(currentContent + '\n- New task');
             console.log('Added new task to the model');
+            if (section.columns.length) {
+              this._model.newTask(undefined, section.columns[0]);
+            } else {
+              // will add to backlog column by default
+              this._model.newTask();
+            }
           },
           tooltip: this.trans.__('Add new task')
         })
