@@ -438,15 +438,58 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
    */
   moveTaskToColumn(task: KanbanTask, toColumn: KanbanColumn, insertBeforeTask?: KanbanTask): void {
     const fromColumn = this.findTaskColumn(task);
-    if (!fromColumn) {
-      console.warn('Task not found in any column:', task);
-      return;
+    
+    const source = this._sharedModel.getSource();
+
+    let editPosition = [task.lineNo];
+
+    if (insertBeforeTask) {
+      editPosition.push(insertBeforeTask.lineNo);
+    } else {
+      editPosition.push(toColumn.lineNo);
     }
 
-    // TODO: Implement the actual text modification logic
-    // 1. Remove task from its current location
-    // 2. Insert task at the new location
-    // 3. Update the model's source
+    const ranges = this.getTextRanges(editPosition);
+    
+    // 定位 Task 的起始 与 结束
+    let taskEnd = source.indexOf('\n#', ranges[0].start);
+    if (taskEnd === -1) {
+      taskEnd = source.length;
+    }
+
+    let insertPosition = ranges[1].start;
+    // 如果是 insertBeforeTask 这样就足够了，如果是 toColumn 需要额外的处理
+    if (!insertBeforeTask) {
+      // 从 ranges[1].start 查找 '\n# ' 或 '\n## '
+      let nextHeadL1 = source.indexOf('\n# ', ranges[1].start);
+      if (nextHeadL1 === -1) {
+        nextHeadL1 = source.length;
+      }
+      let nextHeadL2 = source.indexOf('\n## ', ranges[1].start);
+      if (nextHeadL2 === -1) {
+        nextHeadL2 = source.length;
+      }
+      // 取 nextHeadL1, nextHeadL2 中的最小值
+      insertPosition = Math.min(nextHeadL1, nextHeadL2);
+    }
+
+    // 需要判断 task 与 insertPosition 在文档中的实际前后关系
+    // 避免重复计算 offset
+    if (ranges[0].start < insertPosition) {  
+      // 先添加，再删除, 暂时不考虑 
+      this._sharedModel.updateSource(insertPosition, insertPosition,
+        '\n' + source.substring(ranges[0].start, taskEnd) + '\n'
+      );
+      this._sharedModel.updateSource(ranges[0].start, taskEnd,'');
+    } else {
+      // 先删除，再添加
+      let taskText = source.substring(ranges[0].start, taskEnd);
+      if (!taskText.endsWith('\n')) {
+        taskText = taskText+'\n'; // 强制要求换行为结束
+      }
+      this._sharedModel.updateSource(ranges[0].start, taskEnd,'');
+      this._sharedModel.updateSource(insertPosition, insertPosition, taskText);
+    }
 
     // Emit the status change signal
     this._taskStatusChanged.emit({
