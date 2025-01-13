@@ -34,7 +34,7 @@ export class TaskColumn extends Panel {
    */
   setColumn(column: KanbanColumn) {
     this._column = column;
-    console.log('set column:', column);
+    // console.log('set column:', column);
     this._createContent();
   }
 

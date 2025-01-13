@@ -107,6 +107,21 @@ export class TaskListPanel extends SidePanel {
     donePanel.addClass('jp-TaskList-section');
     donePanel.title.label = this.trans.__('Done');
     
+    // Add clear task button to toolbar
+    donePanel.toolbar.addItem(
+      'clearTask',
+      new ToolbarButton({
+        label: this.trans.__('Clear'),
+        onClick: () => {
+          // console.log('Add new task clicked');
+          // const newTaskId = this._model.newTask();
+          // console.log('Cleared done tasks');
+          this._model.clearCompletedTasks();
+        },
+        tooltip: this.trans.__('Clear done tasks')
+      })
+    );
+
     this._doneColumn = new TaskColumn(this.trans, {
       title: 'Done',
       lineNo: 0,

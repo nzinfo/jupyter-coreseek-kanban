@@ -70,6 +70,11 @@ export namespace Kanban {
      * @returns The newly created task
      */
     newTask(title?: string, toColumn?: KanbanColumn, insertBeforeTask?: KanbanTask): string;
+
+    /**
+     * Clear all completed tasks
+     */
+    clearCompletedTasks(): void;
   }
 }
 
@@ -810,6 +815,77 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
       oldValue: currentSource,
       newValue: newSource
     });
+  }
+
+  /**
+   * Clear all completed tasks
+   */
+  clearCompletedTasks(): void {
+    if (!this._structure) {
+      return;
+    }
+
+    // 遍历 structure.tasks, 如果状态为 DONE, 则删除
+    // 整体清除 Task List, 去掉标记为已完成的
+    let toRemove = this._structure.tasks.filter(task => this._structure?.task_status.get(task.id) === 'DONE');
+    if (toRemove.length === 0) {
+      return;
+    }
+
+    // 按 LineNo 从大到小排序
+    toRemove.sort((a, b) => b.lineNo - a.lineNo);
+    // 单独提取行号
+    const lineNos = toRemove.map(task => task.lineNo);
+    const ranges  = this.getTextRanges(lineNos);
+    
+    // 更新文本
+    const source = this._sharedModel.getSource();
+    for (const range of ranges) {
+      // 尝试定位 task 的结束
+      let taskEnd = source.indexOf('\n#', range.start);
+      if (taskEnd === -1) {
+        taskEnd = source.length;
+      }
+      this._sharedModel.updateSource(range.start, taskEnd, '');
+    }
+
+    // 尝试更新 Task List
+    const lines = source.split('\n');
+
+    // 从 title 之后
+    let origTextSize = 0;
+    let newLines = []
+    const start_ranges  = this.getTextRanges([this._structure.lineNo + 1]);
+    for (let i = this._structure.lineNo + 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (line.startsWith('#')) {
+        break;
+      }
+
+      origTextSize += line.length + 1;
+
+      // 仅保留前缀为 -[ ] 的行
+      if (line.startsWith('-[')) {
+        if (line.startsWith('-[ ')) {
+          newLines.push(line);
+        }
+      } else {
+        newLines.push(line); // 正常通过
+      }
+    }
+    const newText = newLines.join('\n') + '\n';
+    this._sharedModel.updateSource(start_ranges[0].start, start_ranges[0].start + origTextSize, newText);  
+    
+    /*
+    // 触发状态变更事件
+    completedTasks.forEach(task => {
+      this._taskStatusChanged.emit({
+        task,
+        fromColumn: { title: 'DONE', lineNo: -1, tasks: [] },
+        toColumn: undefined
+      });
+    });
+    */
   }
 }
 
