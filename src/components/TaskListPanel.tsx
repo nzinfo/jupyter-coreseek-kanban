@@ -98,6 +98,11 @@ export class TaskListPanel extends SidePanel {
         this._onTaskMoved(task, TaskCategory.BACKLOG, insertTask);
       }
     });
+    this._backlogColumn.setTaskChangedCallback((task) => {
+      if (this._onTaskChanged) {
+        this._onTaskChanged(task);
+      }
+    });
 
     backlogPanel.addWidget(this._backlogColumn);
     this._backlogPanel = backlogPanel;
@@ -130,6 +135,11 @@ export class TaskListPanel extends SidePanel {
     this._doneColumn.setTaskMovedCallback((task, targetColumn, insertTask) => {
       if (this._onTaskMoved) {
         this._onTaskMoved(task, TaskCategory.DONE, insertTask);
+      }
+    });
+    this._doneColumn.setTaskChangedCallback((task) => {
+      if (this._onTaskChanged) {
+        this._onTaskChanged(task);
       }
     });
 
@@ -241,6 +251,15 @@ export class TaskListPanel extends SidePanel {
     this._onTaskMoved = callback;
   }
 
+  /**
+   * Set callback for task changed event
+   */
+  setTaskChangedCallback(callback: ((task: KanbanTask) => void) | null): void {
+    this._onTaskChanged = callback;
+    this._backlogColumn.setTaskChangedCallback(callback);
+    this._doneColumn.setTaskChangedCallback(callback);
+  }
+
   protected trans: TranslationBundle;
   private _backlogColumn: TaskColumn;
   private _doneColumn: TaskColumn;
@@ -252,6 +271,7 @@ export class TaskListPanel extends SidePanel {
   private _backlogPanelExpanded: boolean = true;
   private _donePanelExpanded: boolean = true;
   private _onTaskMoved: ((task: KanbanTask, toCategory: TaskCategory, insertBeforeTask?: KanbanTask) => void) | null = null;
+  private _onTaskChanged: ((task: KanbanTask) => void) | null = null;
   private _model: KanbanModel;
 }
 

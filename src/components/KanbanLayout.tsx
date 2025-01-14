@@ -35,6 +35,12 @@ export class KanbanLayout extends SplitPanel {
       this.handleTaskMovedInList(task, toCategory, insertBeforeTask);
     });
     
+    // Register task changed callback for list view
+    this._tasklistWidget.setTaskChangedCallback((task) => {
+      console.log('task changed: ', task);
+      this._model.modifyTask(task, {});
+    });
+    
     // Create right panel widget
     this._boardWidget = new TaskBoardPanel({ 
       context: options.context,

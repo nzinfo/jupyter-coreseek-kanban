@@ -72,6 +72,13 @@ export namespace Kanban {
     newTask(title?: string, toColumn?: KanbanColumn, insertBeforeTask?: KanbanTask): string;
 
     /**
+     * Modify a task's content
+     * @param task The task to modify
+     * @param changes The changes to apply to the task
+     */
+    modifyTask(task: KanbanTask, changes: Partial<KanbanTask>): void;
+
+    /**
      * Clear all completed tasks
      */
     clearCompletedTasks(): void;
@@ -608,6 +615,76 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
       }
     }
     return undefined;
+  }
+
+  /**
+   * Modify a task's content
+   * @param task The task to modify
+   * @param changes The changes to apply to the task
+   */
+  modifyTask(task: KanbanTask, changes: Partial<KanbanTask>): void {
+    if (!this._structure) {
+      return;
+    }
+
+    const source = this._sharedModel.getSource();
+    const ranges = this.getTextRanges([task.lineNo]);
+    
+    // 定位Task的起始与结束
+    let taskEnd = source.indexOf('\n#', ranges[0].start);
+    if (taskEnd === -1) {
+      taskEnd = source.length;
+    }
+
+    // 生成新的任务文本
+    let newTaskText = '';
+
+    // 1. 标题行
+    if (changes.title && changes.title !== task.title) {
+      newTaskText = `### ${changes.title}\n\n`;
+    } else {
+      // 找到原始标题行
+      const titleEndIndex = source.indexOf('\n', ranges[0].start);
+      const originalTitleLine = source.substring(ranges[0].start, titleEndIndex);
+      newTaskText = originalTitleLine + '\n\n';
+    }
+
+    // 2. 描述
+    if (changes.description !== undefined) {
+      newTaskText += changes.description + '\n\n';
+    } else if (task.description) {
+      newTaskText += task.description + '\n\n';
+    }
+
+    // 3. 详情文件链接
+    if (task.detailFile) {
+      newTaskText += `[=](${task.detailFile})\n`;
+    }
+
+    // 4. 标签
+    const tags = changes.tags || task.tags || [];
+    if (tags.length > 0) {
+      tags.forEach(tag => {
+        newTaskText += `[#${tag}](${tag}.md)\n`;
+      });
+    }
+
+    // 5. 负责人
+    const assignees = changes.assignee || task.assignee || [];
+    if (assignees.length > 0) {
+      assignees.forEach(assignee => {
+        newTaskText += `[@${assignee.name}](${assignee.name}.md)\n`;
+      });
+    }
+
+    // 更新文本
+    this._sharedModel.updateSource(ranges[0].start, taskEnd, newTaskText);
+
+    // 发出任务变更信号
+    this._taskChanged.emit({
+      task,
+      changes: changes
+    });
   }
 
   /**
