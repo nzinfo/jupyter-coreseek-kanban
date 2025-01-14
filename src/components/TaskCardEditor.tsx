@@ -73,6 +73,7 @@ export class TaskCardEditor extends Panel {
   }
   
   private _handleSave = (): void => {
+    // FIXME: 并非所有的 newDescription 都需要保存到 task.description
     const newDescription = this._textarea.value.trim();
     if (newDescription !== this._task.description) {
       this._task.description = newDescription;

@@ -1,7 +1,6 @@
 import { Widget } from '@lumino/widgets';
 import { DragDropManager } from './dragdrop';
 import { KanbanTask } from '../model';
-import { Signal } from '@lumino/signaling';
 import { editIcon } from '@jupyterlab/ui-components';
 import { TaskCardEditor } from './TaskCardEditor';
 import { AssigneeSelector } from './AssigneeSelector';
@@ -107,7 +106,7 @@ export class TaskCard extends Widget {
         this._task.tags.splice(index, 1);
       }
       this._renderTags();
-      this._taskChanged.emit(this._task);
+      this._emitTaskChanged(this._task);
     });
 
     // Add tag selector and render existing tags
@@ -196,7 +195,7 @@ export class TaskCard extends Widget {
 
   private _handleAssigneeChange = (sender: AssigneeSelector, assignee: { name: string; profile?: string }): void => {
     this._task.assignee = [assignee];
-    this.taskChanged.emit(this._task);
+    this._emitTaskChanged(this._task);
   };
 
   private _onTitleClick = (event: MouseEvent): void => {
@@ -214,7 +213,7 @@ export class TaskCard extends Widget {
   private _commitEdit = (): void => {
     if (this._editState && this._editState.value !== this._task.title) {
       this._task.title = this._editState.value;
-      this._taskChanged.emit(this._task);
+      this._emitTaskChanged(this._task);
     }
     this._editState = null;
     this._isEditing = false;
@@ -322,7 +321,7 @@ export class TaskCard extends Widget {
     // Listen for task changes
     editor.taskChanged.connect((_, task) => {
       this._task = task;
-      this._taskChanged.emit(task);
+      this._emitTaskChanged(task);
       this._renderTitle();
     });
     
@@ -384,7 +383,23 @@ export class TaskCard extends Widget {
     );
   }
 
-  readonly taskChanged = new Signal<this, KanbanTask>(this);
+  private _onTaskChanged: ((task: KanbanTask) => void) | null = null;
+
+  /**
+   * Set the callback function for task changes
+   */
+  setTaskChangedCallback(callback: ((task: KanbanTask) => void) | null): void {
+    this._onTaskChanged = callback;
+  }
+
+  /**
+   * Emit task changed event
+   */
+  private _emitTaskChanged(task: KanbanTask): void {
+    if (this._onTaskChanged) {
+      this._onTaskChanged(task);
+    }
+  }
 
   private _task: KanbanTask;
   private _editState: { value: string } | null;
@@ -394,6 +409,6 @@ export class TaskCard extends Widget {
   private _assigneeSelector: AssigneeSelector;
   private _tagSelector: TagSelector;
   private _tagsContainer: HTMLElement;
-  private _taskChanged = this.taskChanged;
+  // private _taskChanged = this.taskChanged;
   // private _editorServices: any;
 }

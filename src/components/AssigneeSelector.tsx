@@ -90,10 +90,11 @@ export class AssigneeSelector extends Widget {
 
     if (this._currentAssignee) {
       avatar.title = this._currentAssignee.name;
+      // FIXME: 需要特别区分 CJK 和 Latin, 对于 Latin 可以使用两个字母。
       if (this._currentAssignee.profile) {
         const img = document.createElement('img');
         img.src = this._currentAssignee.profile;
-        img.alt = this._currentAssignee.name;
+        img.alt = this._currentAssignee.name.charAt(0).toUpperCase(); // this._currentAssignee.name;
         avatar.appendChild(img);
       } else {
         avatar.textContent = this._currentAssignee.name.charAt(0).toUpperCase();

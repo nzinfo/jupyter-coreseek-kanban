@@ -224,6 +224,7 @@ class TaskBoardContent extends Panel {
       columns: []
     };
     this._onTaskMoved = null;
+    this._onTaskChanged = null;
     this._createColumns();
   }
 
@@ -235,9 +236,22 @@ class TaskBoardContent extends Panel {
   }
 
   /**
+   * Set callback for task changed event
+   */
+  setTaskChangedCallback(callback: ((task: KanbanTask) => void) | null): void {
+    this._onTaskChanged = callback;
+    // 遍历所有列，设置它们的taskChanged回调
+    this.widgets.forEach(widget => {
+      if (widget instanceof TaskColumn) {
+        widget.setTaskChangedCallback(callback);
+      }
+    });
+  }
+
+  /**
    * Set section data
    */
-  setSection(section: KanbanSection) {
+  setSection(section: KanbanSection): void {
     this._section = section;
     this._createColumns();
   }
@@ -253,6 +267,7 @@ class TaskBoardContent extends Panel {
     const columnsContainer = document.createElement('div');
     columnsContainer.className = 'jp-TaskBoard-columns';
 
+    // Create columns
     this._section.columns.forEach(column => {
       // Create column container
       const columnContainer = document.createElement('div');
@@ -271,11 +286,15 @@ class TaskBoardContent extends Panel {
       
       // Add task moved callback
       columnWidget.setTaskMovedCallback((task, targetColumn, insertTask) => {
-        if (this._onTaskMoved) {
+          if (this._onTaskMoved) {
           this._onTaskMoved(task, targetColumn, insertTask);
-        }
-      });
-
+          }
+        });
+      columnWidget.setTaskChangedCallback((task) => {
+          if (this._onTaskChanged) {
+          this._onTaskChanged(task);
+          }
+        });
       columnContainer.appendChild(columnWidget.node);
 
       // Add column to container
@@ -288,6 +307,7 @@ class TaskBoardContent extends Panel {
   private _trans: TranslationBundle;
   private _section: KanbanSection;
   private _onTaskMoved: ((task: KanbanTask, toColumn?: KanbanColumn, insertBeforeTask?: KanbanTask) => void) | null;
+  private _onTaskChanged: ((task: KanbanTask) => void) | null;
 }
 
 /**
@@ -345,6 +365,7 @@ export class TaskBoardPanel extends SidePanel {
     });
 
     this._onTaskMoved = null;
+    this._onTaskChanged = null;
 
     // Add header editor panel with the shared model
     this._headerEditor = null; /* new TaskBoardHeaderEditor({ 
@@ -526,6 +547,17 @@ export class TaskBoardPanel extends SidePanel {
     this._onTaskMoved = callback;
   }
 
+  setTaskChangedCallback(callback: (task: KanbanTask) => void): void {
+    this._onTaskChanged = callback;
+    // 遍历所有section面板，找到所有TaskColumn，设置它们的taskChanged回调
+    this._sectionPanels.forEach(panel => {
+      const content = panel.widgets[1] as TaskBoardContent;
+      if (content) {
+        content.setTaskChangedCallback(callback);
+      }
+    });
+  }
+
   private _addEditor(editorWidget: Widget): void {
     if (this._headerEditor) {
       // Add the editor to the header editor panel
@@ -598,6 +630,9 @@ export class TaskBoardPanel extends SidePanel {
       if (this._onTaskMoved) {
         content.setTaskMovedCallback(this._onTaskMoved);
       }
+      if (this._onTaskChanged) {
+        content.setTaskChangedCallback(this._onTaskChanged);
+      }
       // Store panel reference
       this._sectionPanels.push(contentPanel);
     });
@@ -646,6 +681,7 @@ export class TaskBoardPanel extends SidePanel {
   private _isDescriptionEditorOpen: boolean = false;
 
   private _onTaskMoved: ((task: KanbanTask, toColumn?: KanbanColumn, insertBeforeTask?: KanbanTask) => void) | null;
+  private _onTaskChanged: ((task: KanbanTask) => void) | null;
 }
 
 /**
