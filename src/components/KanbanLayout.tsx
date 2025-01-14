@@ -36,9 +36,9 @@ export class KanbanLayout extends SplitPanel {
     });
     
     // Register task changed callback for list view
-    this._tasklistWidget.setTaskChangedCallback((task) => {
-      console.log('task changed: ', task);
-      this._model.modifyTask(task, {});
+    this._tasklistWidget.setTaskChangedCallback((task, changes) => {
+      console.log('task changed: ', task, changes);
+      this._model.modifyTask(task, changes);
     });
     
     // Create right panel widget
@@ -56,11 +56,9 @@ export class KanbanLayout extends SplitPanel {
     });
 
     // Register task changed callback for board view
-    this._boardWidget.setTaskChangedCallback((task) => {
-      // if (this._onTaskChanged) {
-      //  this._onTaskChanged(task);
-      //}
-      console.log('task changed: ', task);
+    this._boardWidget.setTaskChangedCallback((task, changes) => {
+      console.log('task changed: ', task, changes);
+      this._model.modifyTask(task, changes);
     });
     
     // Add widgets to the split panel

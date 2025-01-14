@@ -97,16 +97,20 @@ export class TaskCard extends Widget {
       if (!this._task.tags) {
         this._task.tags = [];
       }
-      const index = this._task.tags.indexOf(tag.name);
+
+      // Create a copy of the tags array
+      const newTags = [...this._task.tags];
+      
+      const index = newTags.indexOf(tag.name);
       if (index === -1) {
         // Add tag
-        this._task.tags.push(tag.name);
+        newTags.push(tag.name);
       } else {
         // Remove tag
-        this._task.tags.splice(index, 1);
+        newTags.splice(index, 1);
       }
-      this._renderTags();
-      this._emitTaskChanged(this._task);
+      // this._renderTags();
+      this._emitTaskChanged({ tags: newTags });
     });
 
     // Add tag selector and render existing tags
@@ -194,8 +198,8 @@ export class TaskCard extends Widget {
   }
 
   private _handleAssigneeChange = (sender: AssigneeSelector, assignee: { name: string; profile?: string }): void => {
-    this._task.assignee = [assignee];
-    this._emitTaskChanged(this._task);
+    //this._task.assignee = [assignee];
+    this._emitTaskChanged({ assignee: [assignee] });
   };
 
   private _onTitleClick = (event: MouseEvent): void => {
@@ -212,8 +216,8 @@ export class TaskCard extends Widget {
 
   private _commitEdit = (): void => {
     if (this._editState && this._editState.value !== this._task.title) {
-      this._task.title = this._editState.value;
-      this._emitTaskChanged(this._task);
+      // this._task.title = this._editState.value;
+      this._emitTaskChanged({ title: this._editState.value });
     }
     this._editState = null;
     this._isEditing = false;
@@ -321,7 +325,7 @@ export class TaskCard extends Widget {
     // Listen for task changes
     editor.taskChanged.connect((_, task) => {
       this._task = task;
-      this._emitTaskChanged(task);
+      this._emitTaskChanged({ ...task });
       this._renderTitle();
     });
     
@@ -383,21 +387,21 @@ export class TaskCard extends Widget {
     );
   }
 
-  private _onTaskChanged: ((task: KanbanTask) => void) | null = null;
+  private _onTaskChanged: ((task: KanbanTask, changes: Partial<KanbanTask>) => void) | null = null;
 
   /**
    * Set the callback function for task changes
    */
-  setTaskChangedCallback(callback: ((task: KanbanTask) => void) | null): void {
+  setTaskChangedCallback(callback: (task: KanbanTask, changes: Partial<KanbanTask>) => void): void {
     this._onTaskChanged = callback;
   }
 
   /**
    * Emit task changed event
    */
-  private _emitTaskChanged(task: KanbanTask): void {
+  private _emitTaskChanged(changes: Partial<KanbanTask> = {}): void {
     if (this._onTaskChanged) {
-      this._onTaskChanged(task);
+      this._onTaskChanged(this._task, changes);
     }
   }
 

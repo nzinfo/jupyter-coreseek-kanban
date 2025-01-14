@@ -238,7 +238,7 @@ class TaskBoardContent extends Panel {
   /**
    * Set callback for task changed event
    */
-  setTaskChangedCallback(callback: ((task: KanbanTask) => void) | null): void {
+  setTaskChangedCallback(callback: ((task: KanbanTask, changes: Partial<KanbanTask>) => void) | null): void {
     this._onTaskChanged = callback;
     // 遍历所有列，设置它们的taskChanged回调
     this.widgets.forEach(widget => {
@@ -290,9 +290,9 @@ class TaskBoardContent extends Panel {
           this._onTaskMoved(task, targetColumn, insertTask);
           }
         });
-      columnWidget.setTaskChangedCallback((task) => {
+      columnWidget.setTaskChangedCallback((task, changes) => {
           if (this._onTaskChanged) {
-          this._onTaskChanged(task);
+          this._onTaskChanged(task, changes);
           }
         });
       columnContainer.appendChild(columnWidget.node);
@@ -307,7 +307,7 @@ class TaskBoardContent extends Panel {
   private _trans: TranslationBundle;
   private _section: KanbanSection;
   private _onTaskMoved: ((task: KanbanTask, toColumn?: KanbanColumn, insertBeforeTask?: KanbanTask) => void) | null;
-  private _onTaskChanged: ((task: KanbanTask) => void) | null;
+  private _onTaskChanged: ((task: KanbanTask, changes: Partial<KanbanTask>) => void) | null;
 }
 
 /**
@@ -547,7 +547,7 @@ export class TaskBoardPanel extends SidePanel {
     this._onTaskMoved = callback;
   }
 
-  setTaskChangedCallback(callback: (task: KanbanTask) => void): void {
+  setTaskChangedCallback(callback: (task: KanbanTask, changes: Partial<KanbanTask>) => void): void {
     this._onTaskChanged = callback;
     // 遍历所有section面板，找到所有TaskColumn，设置它们的taskChanged回调
     this._sectionPanels.forEach(panel => {
@@ -681,7 +681,7 @@ export class TaskBoardPanel extends SidePanel {
   private _isDescriptionEditorOpen: boolean = false;
 
   private _onTaskMoved: ((task: KanbanTask, toColumn?: KanbanColumn, insertBeforeTask?: KanbanTask) => void) | null;
-  private _onTaskChanged: ((task: KanbanTask) => void) | null;
+  private _onTaskChanged: ((task: KanbanTask, changes: Partial<KanbanTask>) => void) | null;
 }
 
 /**

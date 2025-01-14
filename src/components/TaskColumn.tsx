@@ -55,12 +55,18 @@ export class TaskColumn extends Panel {
   /**
    * Set callback for task changed event
    */
-  setTaskChangedCallback(callback: ((task: KanbanTask) => void) | null): void {
+  private _onTaskChanged: ((task: KanbanTask, changes: Partial<KanbanTask>) => void) | null = null;
+
+  setTaskChangedCallback(callback: ((task: KanbanTask, changes: Partial<KanbanTask>) => void) | null): void {
     this._onTaskChanged = callback;
-    // 遍历所有TaskCard，设置它们的taskChanged回调
+    // 为所有任务卡片设置回调
     this.widgets.forEach(widget => {
       if (widget instanceof TaskCard) {
-        widget.setTaskChangedCallback(callback);
+        widget.setTaskChangedCallback((task, changes) => {
+          if (this._onTaskChanged) {
+            this._onTaskChanged(task, changes);
+          }
+        });
       }
     });
   }
@@ -164,7 +170,11 @@ export class TaskColumn extends Panel {
     if (this._column) {
       this._column.tasks.forEach(task => {
         const card = new TaskCard({ task });
-        card.setTaskChangedCallback(this._onTaskChanged);
+        card.setTaskChangedCallback((task, changes) => {
+          if (this._onTaskChanged) {
+            this._onTaskChanged(task, changes);
+          }
+        });
         this.addWidget(card);
       });
       
@@ -219,5 +229,4 @@ export class TaskColumn extends Panel {
   private _dropIndicator: HTMLDivElement;
   private _column: KanbanColumn | null = null;
   private _onTaskMoved: ((task: KanbanTask, column: KanbanColumn, insertTask?: KanbanTask) => void) | null = null;
-  private _onTaskChanged: ((task: KanbanTask) => void) | null = null;
 }

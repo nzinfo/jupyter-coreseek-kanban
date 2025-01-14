@@ -639,13 +639,14 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
     // 生成新的任务文本
     let newTaskText = '';
 
+    // 找到原始标题行
+    const titleEndIndex = source.indexOf('\n', ranges[0].start);
+    const originalTitleLine = source.substring(ranges[0].start, titleEndIndex);
+
     // 1. 标题行
     if (changes.title && changes.title !== task.title) {
       newTaskText = `### ${changes.title}\n\n`;
-    } else {
-      // 找到原始标题行
-      const titleEndIndex = source.indexOf('\n', ranges[0].start);
-      const originalTitleLine = source.substring(ranges[0].start, titleEndIndex);
+    } else {  
       newTaskText = originalTitleLine + '\n\n';
     }
 
@@ -679,6 +680,24 @@ export class KanbanModel extends DocumentModel implements Kanban.IModel {
 
     // 更新文本
     this._sharedModel.updateSource(ranges[0].start, taskEnd, newTaskText);
+
+    // 如果标题发生变化，则 TaskList 中的对应部分也需要更新
+    if (changes.title && changes.title !== task.title) {
+      // 更新 task list
+      // this._structure.lineNo + 1 为 TaskList 的起始行
+      // 为简化实现，处理为 抽取 取消前缀的 `### xxxx` 取其 xxxx 部分，在文本中检索
+      // ] xxxx , 以匹配任务列表
+      // 文本更新 
+      const originalTaskTitle = task.title.replace(/^[#]{3}\s+/, '');
+      const taskListStart = source.indexOf(`] ${originalTaskTitle}`);
+      if (taskListStart === -1) {
+        return;
+      }
+      const taskListEnd = source.indexOf('\n', taskListStart);
+      this._sharedModel.updateSource(taskListStart, taskListEnd,
+        `] ${changes.title}\n`
+      );
+    }
 
     // 发出任务变更信号
     this._taskChanged.emit({

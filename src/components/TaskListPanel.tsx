@@ -98,9 +98,9 @@ export class TaskListPanel extends SidePanel {
         this._onTaskMoved(task, TaskCategory.BACKLOG, insertTask);
       }
     });
-    this._backlogColumn.setTaskChangedCallback((task) => {
+    this._backlogColumn.setTaskChangedCallback((task, changes) => {
       if (this._onTaskChanged) {
-        this._onTaskChanged(task);
+        this._onTaskChanged(task, changes);
       }
     });
 
@@ -137,9 +137,9 @@ export class TaskListPanel extends SidePanel {
         this._onTaskMoved(task, TaskCategory.DONE, insertTask);
       }
     });
-    this._doneColumn.setTaskChangedCallback((task) => {
+    this._doneColumn.setTaskChangedCallback((task, changes) => {
       if (this._onTaskChanged) {
-        this._onTaskChanged(task);
+        this._onTaskChanged(task, changes);
       }
     });
 
@@ -254,10 +254,25 @@ export class TaskListPanel extends SidePanel {
   /**
    * Set callback for task changed event
    */
-  setTaskChangedCallback(callback: ((task: KanbanTask) => void) | null): void {
+  private _onTaskChanged: ((task: KanbanTask, changes: Partial<KanbanTask>) => void) | null = null;
+
+  setTaskChangedCallback(callback: (task: KanbanTask, changes: Partial<KanbanTask>) => void): void {
     this._onTaskChanged = callback;
-    this._backlogColumn.setTaskChangedCallback(callback);
-    this._doneColumn.setTaskChangedCallback(callback);
+    // 为所有列设置回调
+    if (this._backlogColumn) {
+      this._backlogColumn.setTaskChangedCallback((task, changes) => {
+        if (this._onTaskChanged) {
+          this._onTaskChanged(task, changes);
+        }
+      });
+    }
+    if (this._doneColumn) {
+      this._doneColumn.setTaskChangedCallback((task, changes) => {
+        if (this._onTaskChanged) {
+          this._onTaskChanged(task, changes);
+        }
+      });
+    }
   }
 
   protected trans: TranslationBundle;
@@ -271,7 +286,6 @@ export class TaskListPanel extends SidePanel {
   private _backlogPanelExpanded: boolean = true;
   private _donePanelExpanded: boolean = true;
   private _onTaskMoved: ((task: KanbanTask, toCategory: TaskCategory, insertBeforeTask?: KanbanTask) => void) | null = null;
-  private _onTaskChanged: ((task: KanbanTask) => void) | null = null;
   private _model: KanbanModel;
 }
 
